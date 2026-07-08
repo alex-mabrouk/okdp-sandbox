@@ -1,0 +1,1169 @@
+#
+# Copyright 2026 The OKDP Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+
+apiVersion: kubocd.kubotal.io/v1alpha1
+kind: Context
+metadata:
+  name: examples
+  namespace: kubocd-system
+spec:
+  # -- Example data model and sandbox-specific configuration layered on top of the base providers and services.
+  context:
+    # -- Example Trino catalogs and connector definitions for benchmark data and the bronze/silver/gold lakehouse model.
+    trino:
+      # -- Names of `trino.connections` to materialize as Trino catalogs. Each entry must match a connection name below.
+      catalogs:
+        - tpch
+        - tpcds
+        - bronze
+        - silver
+        - gold
+      # -- Reusable Trino catalog connection specs. Referenced entries are rendered as connector properties for the active catalogs.
+      connections:
+        - name: tpch
+          description: |
+            TPC-H benchmark catalog with generated decision-support data for testing analytical SQL 
+            queries and engine performance.
+          properties: |
+            connector.name=tpch
+            tpch.splits-per-node=4
+        - name: tpcds
+          description: |
+            TPC-DS benchmark catalog with generated retail decision-support data for testing complex analytics 
+            workloads and query performance.
+          properties: |
+            connector.name=tpcds
+            tpcds.splits-per-node=4
+        - name: bronze
+          description: |
+            Bronze medallion catalog for raw ingested datasets registered in Hive Metastore before cleansing 
+            or standardization.
+          service:
+            name: hiveMetastore
+          storage:
+            provider: defaultStorage
+            credentialsSecret:
+              name: creds-trino-s3
+              accessKeyKey: S3_ACCESS_KEY
+              secretKeyKey: S3_SECRET_ACCESS
+          properties: |
+            connector.name=hive
+            hive.metastore.uri={{ service.endpoints.url }}
+            hive.metastore.username=trino
+            hive.non-managed-table-writes-enabled=true
+            
+            s3.endpoint={{ storage.endpoints.apiUrl }}
+            s3.aws-access-key=${ENV:S3_ACCESS_KEY}
+            s3.aws-secret-key=${ENV:S3_SECRET_ACCESS}
+            fs.native-s3.enabled=true
+            s3.region={{ storage.region }}
+            s3.path-style-access=true
+        - name: silver
+          description: |
+            Silver medallion catalog for cleaned and conformed Iceberg datasets managed through Polaris for downstream analytics.
+          service:
+            name: polaris
+            oidc:
+              provider: defaultIdp
+              credentialsSecret:
+                name: creds-trino-oauth2-polaris
+                clientIdKey: client_id
+                clientSecretKey: client_secret
+          storage:
+            provider: defaultStorage
+            # Enable vended credentials - uncomment to disable
+            # credentialsSecret:
+            #   name: creds-trino-s3
+            #   accessKeyKey: S3_ACCESS_KEY
+            #   secretKeyKey: S3_SECRET_ACCESS
+          properties: |
+            connector.name=iceberg
+            iceberg.rest-catalog.warehouse={{ connection.name }}
+            iceberg.catalog.type=rest
+            iceberg.rest-catalog.uri={{ service.endpoints.url }}/api/catalog
+            iceberg.rest-catalog.oauth2.server-uri={{ idp.endpoints.tokenUrl }}
+            iceberg.rest-catalog.security=OAUTH2
+            iceberg.rest-catalog.oauth2.credential=${ENV:client_id}:${ENV:client_secret}
+            iceberg.rest-catalog.oauth2.scope=profile
+            
+            s3.endpoint={{ storage.endpoints.apiUrl }}
+            fs.native-s3.enabled=true
+            s3.region={{ storage.region }}
+            s3.path-style-access=true
+            
+            # Enable vended credentials - uncomment to disable
+            iceberg.rest-catalog.vended-credentials-enabled=true
+            # s3.aws-access-key=${ENV:S3_ACCESS_KEY}
+            # s3.aws-secret-key=${ENV:S3_SECRET_ACCESS}
+        - name: gold
+          description: |
+            Gold medallion catalog for curated, business-ready Iceberg datasets optimized for reporting, BI, and shared consumption.
+          service:
+            name: polaris
+            oidc:
+              provider: defaultIdp
+              credentialsSecret:
+                name: creds-trino-oauth2-polaris
+                clientIdKey: client_id
+                clientSecretKey: client_secret
+          storage:
+            provider: defaultStorage
+            # Enable vended credentials - uncomment to disable
+            # credentialsSecret:
+            #   name: creds-trino-s3
+            #   accessKeyKey: S3_ACCESS_KEY
+            #   secretKeyKey: S3_SECRET_ACCESS
+          properties: |
+            connector.name=iceberg
+            iceberg.rest-catalog.warehouse={{ connection.name }}
+            iceberg.catalog.type=rest
+            iceberg.rest-catalog.uri={{ service.endpoints.url }}/api/catalog
+            iceberg.rest-catalog.oauth2.server-uri={{ idp.endpoints.tokenUrl }}
+            iceberg.rest-catalog.security=OAUTH2
+            iceberg.rest-catalog.oauth2.credential=${ENV:client_id}:${ENV:client_secret}
+            iceberg.rest-catalog.oauth2.scope=profile
+            
+            s3.endpoint={{ storage.endpoints.apiUrl }}
+            fs.native-s3.enabled=true
+            s3.region={{ storage.region }}
+            s3.path-style-access=true
+            
+            # Enable vended credentials - uncomment to disable
+            iceberg.rest-catalog.vended-credentials-enabled=true
+            # s3.aws-access-key=${ENV:S3_ACCESS_KEY}
+            # s3.aws-secret-key=${ENV:S3_SECRET_ACCESS}
+
+    # -- Example Superset data sources that connect to the bronze, silver, and gold Trino catalogs.
+    superset:
+      # -- Superset data source selector. The `databases` list references names from `superset.connections` to import as Superset databases.
+      dataSources: |
+        databases:
+          - bronze
+          - silver
+          - gold
+      # -- Reusable Superset database connection specs. Referenced entries render the SQLAlchemy/YAML database definitions used by Superset.
+      connections:
+        - name: bronze
+          description: |
+            Superset connection to the Bronze Trino catalog for exploring raw ingested datasets before cleansing 
+            and standardization.
+          service:
+            name: trino
+          yaml: |
+            database_name: hms-bronze
+            sqlalchemy_uri: "{{ service.endpoints.uri }}:443/bronze?http_scheme=https&verify=false"
+            impersonate_user: true
+            extra: |
+              {
+                "engine_params": {},
+                "metadata_params": {},
+                "connect_args": {
+                  "http_scheme": "https",
+                  "verify": false
+                },
+                "metadata_cache_timeout": {},
+                "schemas_allowed_for_file_upload": []
+              }
+            allow_run_async: true
+            allow_dml: true
+            allow_ctas: true
+            allow_cvas: true
+            expose_in_sqllab: true
+        - name: silver
+          description: |
+            Superset connection to the Silver Trino catalog for analyzing cleaned and conformed datasets prepared for 
+            downstream analytics.
+          service:
+            name: trino
+          yaml: |
+            database_name: polaris-silver
+            sqlalchemy_uri: "{{ service.endpoints.uri }}:443/silver?http_scheme=https&verify=false"
+            impersonate_user: true
+            extra: |
+              {
+                "engine_params": {},
+                "metadata_params": {},
+                "connect_args": {
+                  "http_scheme": "https",
+                  "verify": false
+                },
+                "metadata_cache_timeout": {},
+                "schemas_allowed_for_file_upload": []
+              }
+            allow_run_async: true
+            allow_dml: true
+            allow_ctas: true
+            allow_cvas: true
+            expose_in_sqllab: true
+        - name: gold
+          description: |
+            Superset connection to the Gold Trino catalog for reporting on curated, business-ready datasets optimized for dashboards and BI.
+          service:
+            name: trino
+          yaml: |
+            database_name: polaris-gold
+            sqlalchemy_uri: "{{ service.endpoints.uri }}:443/gold?http_scheme=https&verify=false"
+            impersonate_user: true
+            extra: |
+              {
+                "engine_params": {},
+                "metadata_params": {},
+                "connect_args": {
+                  "http_scheme": "https",
+                  "verify": false
+                },
+                "metadata_cache_timeout": {},
+                "schemas_allowed_for_file_upload": []
+              }
+            allow_run_async: true
+            allow_dml: true
+            allow_ctas: true
+            allow_cvas: true
+            expose_in_sqllab: true    
+      oidc:
+        roleMapping:
+          "platform_admin": ["Admin"]
+          "data_engineer": ["Alpha", "sql_lab"]
+          "data_scientist": ["Alpha", "sql_lab"]
+          "business_analyst": ["Gamma"]
+          "data_steward": ["Gamma", "sql_lab"]
+          "auditor": ["Gamma"]
+
+    # -- Example Spark History Server OIDC role mapping
+    sparkHistory:
+      oidc:
+        roleMapping:
+          # spark.admin.acls.groups
+          admin_groups:
+            - platform_admin
+          # spark.history.ui.admin.acls.groups
+          history_admin_groups:
+            - platform_admin
+            - auditor
+          # spark.modify.acls.groups
+          modify_groups:
+            - platform_admin
+            - data_engineer
+          # spark.ui.view.acls.groups
+          view_groups:
+            - platform_admin
+            - data_engineer
+            - data_scientist
+            - data_steward
+            - business_analyst
+
+    # -- Example Polaris realm model, administrative principals, catalogs, catalog roles, principal roles, and demo principal grants.
+    polaris:
+      realms:
+        - name: sandbox
+          # Polaris built-in bootstrap 'root' principal for this realm.
+          # Used only by svc-polaris-api-admin-tool to set the credentials CLIENT_ID/CLIENT_SECRET
+          # (stored as hashes in the metastore DB). Do NOT map normal OIDC logins to 'root' principal.
+          # Docs: https://polaris.apache.org/releases/1.3.0/configuring-polaris-for-production/#bootstrapping
+          rootPrincipal:
+            name: root
+            credentialsSecret:
+              name: creds-polaris-root-okdp-sandbox
+              clientIdKey: client_id
+              clientSecretKey: client_secret
+          # External OIDC-based administrative principals (non root, limited permissions)
+          # Service admin: manages principals/principal-roles and server-level admin operations.
+          # Catalog admin: manages catalog roles, grants, and catalog-level access control.
+          principals:
+            # - In production, split into separate principals (least privilege), e.g.:
+            #   * polaris_service_admin  -> service_admin  (principals/principal-roles, server/realm admin)
+            #   * polaris_catalog_admin  -> catalog_admin  (catalog roles, grants, catalog access control)
+            # - Create additional principals for specific purposes (e.g., CI/CD, automation, etc.) with only the
+            #   roles they need.
+            #
+            # - For the Sandbox env, you may combine multiple admin roles into a single principal for simplicity.
+            # Service Account Polaris Admin (for polaris automation)
+            - name: service-account-svc-polaris-api-admin
+              clientId: svc-polaris-api-admin
+              credentialsSecret:
+                name: creds-polaris-oauth2-admin-okdp-sandbox
+                clientIdKey: client_id
+                clientSecretKey: client_secret
+              roles:
+                - service_admin
+                - catalog_admin
+            # Interactive user Polaris Administrator (for polaris console)
+            - name: adm
+              roles:
+                - service_admin
+                - catalog_admin
+
+    # -- Example Polaris Console defaults for the sandbox realm.
+    polarisConsole:
+      defaultRealm: sandbox
+
+    # -- Example JupyterHub file browser locations, Spark catalog connections, and welcome notebook for the demo lakehouse.
+    jupyterHub:
+      fileBrowser:
+        locations:
+          - name: bronze
+            uri: s3://bronze
+          - name: silver
+            uri: s3://silver
+          - name: gold
+            uri: s3://gold
+      # -- Names of `jupyterHub.connections` to inject into the PySpark runtime. Each entry contributes Spark properties for notebooks.
+      pyspark:
+        - lakehouse
+        - silver
+        - gold
+      # -- Reusable JupyterHub connection specs. `pyspark` references these by name to configure S3 access and Iceberg/Polaris Spark catalogs.
+      connections:
+        - name: lakehouse
+          description: |
+            Spark object storage connection for reading and writing lakehouse datasets directly in the S3 
+            from Jupyter notebooks.
+          storage:
+            provider: defaultStorage
+            credentialsSecret:
+              name: creds-examples-s3
+              accessKeyKey: S3_ACCESS_KEY
+              secretKeyKey: S3_SECRET_KEY
+          properties: |
+            spark.hadoop.fs.s3a.endpoint={{ storage.endpoints.apiUrl }}
+            spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem
+            spark.hadoop.fs.s3a.aws.credentials.provider=org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider
+            spark.hadoop.fs.s3a.access.key=$(S3_ACCESS_KEY)
+            spark.hadoop.fs.s3a.secret.key=$(S3_SECRET_KEY)
+            spark.hadoop.fs.s3a.path.style.access=true
+            spark.hadoop.fs.s3a.connection.maximum=100
+            spark.hadoop.fs.s3a.connection.ssl.enabled=true
+            spark.hadoop.fs.s3a.endpoints.region={{ storage.region }}
+            spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
+        - name: silver
+          description: |
+            Spark Iceberg REST catalog connection for exploring and transforming cleaned, conformed Silver datasets
+            from Jupyter notebooks through Polaris.
+          service:
+            name: polaris
+          storage:
+            provider: defaultStorage
+          properties: |
+            spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
+            spark.sql.catalog.{{ connection.name }}.header.Polaris-Realm=sandbox
+            spark.sql.catalog.{{ connection.name }}.type=rest
+            spark.sql.catalog.{{ connection.name }}=org.apache.iceberg.spark.SparkCatalog
+            spark.sql.catalog.{{ connection.name }}.warehouse={{ connection.name }}
+            spark.sql.catalog.{{ connection.name }}.uri={{ service.endpoints.url }}/api/catalog
+            spark.sql.catalog.{{ connection.name }}.oauth2-server-uri={{ idp.endpoints.tokenUrl }}
+            spark.sql.catalog.{{ connection.name }}.scope=profile
+            spark.sql.catalog.{{ connection.name }}.header.X-Iceberg-Access-Delegation=vended-credentials
+            spark.sql.catalog.{{ connection.name }}.rest.auth.type=oauth2
+            spark.sql.catalog.{{ connection.name }}.token-refresh-enabled=true
+            spark.sql.catalog.{{ connection.name }}.client.region={{ storage.region }}
+            spark.sql.catalog.{{ connection.name }}.s3.region={{ storage.region }}
+            spark.sql.catalog.{{ connection.name }}.io-impl=org.apache.iceberg.io.ResolvingFileIO
+        - name: gold
+          description: |
+            Spark Iceberg REST catalog connection for querying and producing curated, business-ready Gold datasets
+            from Jupyter notebooks through Polaris.
+          service:
+            name: polaris
+          storage:
+            provider: defaultStorage
+          properties: |
+            spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
+            spark.sql.catalog.{{ connection.name }}.header.Polaris-Realm=sandbox
+            spark.sql.catalog.{{ connection.name }}.type=rest
+            spark.sql.catalog.{{ connection.name }}=org.apache.iceberg.spark.SparkCatalog
+            spark.sql.catalog.{{ connection.name }}.warehouse={{ connection.name }}
+            spark.sql.catalog.{{ connection.name }}.uri={{ service.endpoints.url }}/api/catalog
+            spark.sql.catalog.{{ connection.name }}.oauth2-server-uri={{ idp.endpoints.tokenUrl }}
+            spark.sql.catalog.{{ connection.name }}.scope=profile
+            spark.sql.catalog.{{ connection.name }}.header.X-Iceberg-Access-Delegation=vended-credentials
+            spark.sql.catalog.{{ connection.name }}.rest.auth.type=oauth2
+            spark.sql.catalog.{{ connection.name }}.token-refresh-enabled=true
+            spark.sql.catalog.{{ connection.name }}.client.region={{ storage.region }}
+            spark.sql.catalog.{{ connection.name }}.s3.region={{ storage.region }}
+            spark.sql.catalog.{{ connection.name }}.io-impl=org.apache.iceberg.io.ResolvingFileIO
+      oidc:
+        roleMapping:
+          admin_groups:
+            - platform_admin
+          allowed_groups:
+            - platform_admin
+            - data_engineer
+            - data_scientist
+            - data_steward
+            - business_analyst
+      welcomeNotebook: |
+        {
+          "cells": [
+            {
+              "cell_type": "markdown",
+              "id": "127ae6f0",
+              "metadata": {},
+              "source": [
+                "# 👋 Welcome to OKDP Examples\n",
+                "\n",
+                "This workspace contains hands-on examples and ready-to-run workflows for the **[Open Kubernetes Data Platform (OKDP)](https://okdp.io)**.\n",
+                "\n",
+                "You’ll be able to explore:\n",
+                "\n",
+                "- **[SeaweedFS](https://github.com/seaweedfs/seaweedfs)** for S3-compatible object storage\n",
+                "- **[Hive Metastore](https://hive.apache.org/)** for table/catalog metadata\n",
+                "- **[Trino](https://trino.io/)** for interactive SQL queries\n",
+                "- **[Jupyter](https://jupyter.org/)** for notebooks and analysis\n",
+                "- **[Apache Superset](https://superset.apache.org/)** for dashboards and visualizations\n",
+                "\n",
+                "---\n",
+                "\n",
+                "## 🚀 Get started\n",
+                "\n",
+                "Click the link below to **download or update** the [okdp-examples](https://github.com/OKDP/okdp-examples) repository directly into your JupyterLab workspace.\n",
+                "\n",
+                "> Tip: If you already cloned it before, this will **pull the latest changes**.\n",
+                "\n",
+                "[✅ Sync OKDP Examples]({{ $jupyterUrl }}/hub/user-redirect/git-pull?repo=https://github.com/OKDP/okdp-examples&branch=main&urlpath=lab/tree/okdp-examples/notebooks/index.ipynb)\n",
+                "\n",
+                "---\n",
+                "\n",
+                "## 🧭 What’s inside the repo\n",
+                "\n",
+                "- **Helm-driven workflows** to download public datasets and upload them to S3 (SeaweedFS)\n",
+                "- **Trino SQL** examples to create external tables and sync partitions\n",
+                "- **Jupyter notebooks** to query Trino (SQLAlchemy + native SQL)\n",
+                "- Optional **Superset** workflows for visualization\n",
+                "\n",
+                "If you get stuck, open the repo’s [README](https://github.com/OKDP/okdp-examples) and follow the step-by-step instructions.\n"
+              ]
+            }
+          ],
+          "metadata": {
+            "kernelspec": {
+              "display_name": "Python 3 (ipykernel)",
+              "language": "python",
+              "name": "python3"
+            },
+            "language_info": {
+              "codemirror_mode": {
+                "name": "ipython",
+                "version": 3
+              },
+              "file_extension": ".py",
+              "mimetype": "text/x-python",
+              "name": "python",
+              "nbconvert_exporter": "python",
+              "pygments_lexer": "ipython3",
+              "version": "3.12.12"
+            }
+          },
+          "nbformat": 4,
+          "nbformat_minor": 5
+        }
+
+    airflow:
+      dags:
+        gitSync:
+          enabled: true
+          repo: https://github.com/OKDP/okdp-examples.git
+          branch: main
+          ref: HEAD
+          depth: 1
+          subPath: airflow/dags
+          period: 60s
+          # credentialsSecret:
+          #   name: creds-git-examples
+          #   usernameKey: GITSYNC_USERNAME
+          #   passwordKey: GITSYNC_PASSWORD
+      oidc:
+        # https://airflow.apache.org/docs/apache-airflow-providers-fab/stable/auth-manager/access-control.html
+        # Map OIDC roles into airflow internal roles
+        roleMapping:
+          platform_admin: [ "Admin" ]
+          data_engineer: [ "Op" ]
+          data_scientist: [ "User" ]
+          business_analyst: [ "Viewer" ]
+          data_steward: [ "Viewer" ]
+          auditor: [ "Viewer" ]
+
+    examples:
+      mylakehouse:
+        bronze:
+          storageUri: s3://bronze
+          prefix: mobility/nyc_tlc
+          dataDownloadUrl: https://d37ci6vzurychx.cloudfront.net/trip-data
+        silver:
+          storageUri: s3://silver
+        gold:
+          storageUri: s3://gold
+      storage:
+        provider: defaultStorage
+        credentialsSecret:
+          name: creds-examples-s3
+          accessKeyKey: S3_ACCESS_KEY
+          secretKeyKey: S3_SECRET_KEY
+      trino:
+        url: https://trino-{{ .Release.namespace }}.{{ .Context.platform.ingress.suffix }}
+        oidc:
+          enabled: true
+          provider: defaultIdp
+          credentialsSecret:
+            name: creds-examples-oauth2-trino
+            clientIdKey: client_id
+            clientSecretKey: client_secret
+      polaris:
+        realms:
+          - name: sandbox
+            catalogs:
+              - name: silver
+                type: INTERNAL
+                properties:
+                  default-base-location: s3://silver/
+                storageConfigInfo:
+                  storageType: S3
+                  allowedLocations:
+                    - "s3://silver/"
+                  endpoint: "$S3_ENDPOINT"
+                  endpointInternal: "$S3_ENDPOINT"
+                  stsEndpoint: "$S3_ENDPOINT"
+                  pathStyleAccess: true
+                  stsUnavailable: false
+                  region: "dummy"
+                  roleArn: "arn:aws:iam::000000000000:role/S3WriteRole"
+
+              - name: gold
+                type: INTERNAL
+                properties:
+                  default-base-location: s3://gold/
+                storageConfigInfo:
+                  storageType: S3
+                  allowedLocations:
+                    - "s3://gold/"
+                  endpoint: "$S3_ENDPOINT"
+                  endpointInternal: "$S3_ENDPOINT"
+                  stsEndpoint: "$S3_ENDPOINT"
+                  pathStyleAccess: true
+                  stsUnavailable: false
+                  region: "dummy"
+                  roleArn: "arn:aws:iam::000000000000:role/S3WriteRole"
+            catalogRoles:
+              # Polaris example roles:
+              # - Catalog readers: read-only access to tables in the catalog
+              # - Catalog contributor: read and write access to tables in the catalog
+              # In the Polaris RBAC example, Catalog contributor also creates namespaces and tables.
+              # Since this deployment example grants privileges only at catalog level, these privileges
+              # apply across the whole catalog.
+              # https://polaris.apache.org/in-dev/unreleased/managing-security/access-control
+              - name: catalog_contributor
+                grants:
+                  - onCatalogs: [silver, gold]
+                    privileges:
+                      - CATALOG_READ_PROPERTIES
+                      - NAMESPACE_CREATE
+                      - NAMESPACE_LIST
+                      - NAMESPACE_READ_PROPERTIES
+                      - TABLE_CREATE
+                      - TABLE_LIST
+                      - TABLE_READ_PROPERTIES
+                      - TABLE_WRITE_PROPERTIES
+                      - TABLE_READ_DATA
+                      - TABLE_WRITE_DATA
+                      - VIEW_CREATE
+                      - VIEW_LIST
+                      - VIEW_READ_PROPERTIES
+                      - VIEW_WRITE_PROPERTIES
+
+              - name: catalog_reader
+                grants:
+                  - onCatalogs: [silver, gold]
+                    privileges:
+                      - CATALOG_READ_PROPERTIES
+                      - NAMESPACE_LIST
+                      - NAMESPACE_READ_PROPERTIES
+                      - TABLE_LIST
+                      - TABLE_READ_PROPERTIES
+                      - TABLE_READ_DATA
+                      - VIEW_LIST
+                      - VIEW_READ_PROPERTIES
+
+              - name: data_administrator
+                grants:
+                  - onCatalogs: [silver, gold]
+                    privileges:
+                      - CATALOG_READ_PROPERTIES
+                      - CATALOG_WRITE_PROPERTIES
+                      # namespace administration
+                      - NAMESPACE_CREATE
+                      - NAMESPACE_LIST
+                      - NAMESPACE_READ_PROPERTIES
+                      - NAMESPACE_WRITE_PROPERTIES
+                      - NAMESPACE_DROP
+                      # metadata administration on tables/views
+                      - TABLE_LIST
+                      - TABLE_READ_PROPERTIES
+                      - TABLE_WRITE_PROPERTIES
+                      - TABLE_DROP
+                      - VIEW_LIST
+                      - VIEW_READ_PROPERTIES
+                      - VIEW_WRITE_PROPERTIES
+                      - VIEW_DROP
+                      # policy lifecycle
+                      - POLICY_CREATE
+                      - POLICY_READ
+                      - POLICY_WRITE
+                      - POLICY_LIST
+                      - POLICY_DROP
+                      - CATALOG_ATTACH_POLICY
+                      - CATALOG_DETACH_POLICY
+
+            principalRoles:
+
+              - name: business_analyst
+                catalogRoles:
+                  - catalog_reader
+
+              - name: data_scientist
+                catalogRoles:
+                  - catalog_reader
+
+              - name: data_steward
+                catalogRoles:
+                  - catalog_reader
+                  - data_administrator
+
+              - name: data_engineer
+                catalogRoles:
+                  - catalog_contributor
+                  - data_administrator
+
+              - name: auditor
+                catalogRoles:
+                  - catalog_reader
+
+              - name: platform_admin
+                catalogRoles:
+                  - catalog_contributor
+                  - data_administrator
+
+              # Polaris management/admin principal roles used for admin-plane access
+              # (for example via OIDC role mapping such as PRINCIPAL_ROLE:service_admin
+              # and PRINCIPAL_ROLE:catalog_admin). Keep them declared in Polaris even if
+              # they have no catalogRoles here, because Polaris requires principal roles
+              # referenced by tokens/principals to already exist. These are not regular
+              # catalog data-access roles like data_engineer or data_scientist.
+              - name: service_admin
+                catalogRoles: []
+
+              - name: catalog_admin
+                catalogRoles: []
+
+            # https://github.com/apache/polaris/issues/2373
+            principals:
+              - name: bob
+                principalRoles:
+                  - data_engineer
+
+              - name: mark
+                principalRoles:
+                  - data_scientist
+
+              - name: nina
+                principalRoles:
+                  - business_analyst
+
+              - name: grace
+                principalRoles:
+                  - data_steward
+
+              - name: alice
+                principalRoles:
+                  - platform_admin
+                  - service_admin
+                  - catalog_admin
+
+              - name: eve
+                principalRoles:
+                  - auditor
+
+              - name: adm
+                principalRoles:
+                  - platform_admin
+                  - service_admin
+                  - catalog_admin
+
+              - name: service-account-svc-trino-polaris-writer
+                principalRoles:
+                  - platform_admin
+                  - service_admin
+                  - catalog_admin
+
+              - name: service-account-svc-spark-etl-polaris-writer
+                principalRoles:
+                  - data_engineer
+                  - data_scientist
+                  - business_analyst
+
+              - name: service-account-svc-polaris-api-admin
+                principalRoles:
+                  - service_admin
+                  - catalog_admin
+
+    # -- Sandbox-specific storage provider implementation settings for SeaweedFS databases, S3 credentials, STS, and identities.
+    defaultStorage:
+      # Sandbox implementation-specific
+      # Consider this part already provided by your platform
+      # settings: {}
+      settings:
+        filer:
+          database:
+            provider: defaultDatabaseServer
+            name: seaweedfs
+            credentialsSecret:
+              name: creds-seaweedfs-db
+              usernameKey: username
+              passwordKey: password
+        s3:
+          enabled: true
+          s3_secret: creds-seaweedfs-identities
+          bucketAnonymousRead: true
+          credentialsSecret:
+            name: creds-seaweedfs-s3
+            accessKeyKey: accessKey
+            secretKeyKey: secretKey
+
+          sts:
+            enabled: true
+            roleArn: arn:aws:iam::000000000000:role/S3WriteRole
+
+          advanced:
+            identities:
+              hiveMetastore:
+                identity: hiveMetastore
+                actions: [ Read, Write, List ]
+              trino:
+                identity: trino
+                actions: [ Read, Write, List, Admin ]
+              jupyterHub:
+                identity: jupyterHub
+                actions: [ Read, Write, List ]
+              sparkHistory:
+                identity: sparkHistory
+                actions: [ Read, Write, List ]
+              # SeaweedFS matches the accessKey above in the SigV4 request to the configured S3 credentials
+              # under this identity. The identity name can be anything and has importance for debugging issues
+              # SeaweedFS expects an admin identity to authorize it for sts:AssumeRole.
+              # response: code=AccessDenied, type=Sender, message=user
+              # polaris is not authorized to assume role arn:aws:iam::000000000000:role/S3WriteRole
+              polaris:
+                identity: polaris
+                actions: [ Read, Write, List, Admin ]
+              airflow:
+                identity: airflow
+                actions: [ Read, Write, List, Admin ]
+              examples:
+                identity: examples
+                actions: [ Admin, Read, Write, List ]
+              seaweedfs:
+                identity: seaweedfs
+                actions: [ Admin ]
+
+    # -- Sandbox-specific identity provider settings for Keycloak users, roles, clients, service accounts, and OIDC scopes.
+    defaultIdp:
+      # Sandbox implementation-specific
+      # Consider this part already provided by your IDP
+      # settings: {}
+      settings:
+        database:
+          provider: defaultDatabaseServer
+          name: keycloak
+          credentialsSecret:
+            name: creds-keycloak-db
+            usernameKey: username
+            passwordKey: password
+        realm:
+          name: master
+          displayName: "OKDP internal Realm"
+          accessTokenLifespan: 3600
+        users:
+          - username: bob
+            email: bob@okdp.io
+            firstName: bob
+            lastName: bob
+            password: bob
+            roles: [data_engineer]
+          - username: mark
+            email: mark@okdp.io
+            firstName: mark
+            lastName: mark
+            password: mark
+            roles: [data_scientist]
+          - username: nina
+            email: nina@okdp.io
+            firstName: nina
+            lastName: nina
+            password: nina
+            roles: [business_analyst]
+          - username: grace
+            email: grace@okdp.io
+            firstName: grace
+            lastName: grace
+            password: grace
+            roles: [data_steward]
+          - username: alice
+            email: alice@okdp.io
+            firstName: alice
+            lastName: alice
+            password: alice
+            roles: [platform_admin, polaris_service_admin, polaris_catalog_admin]
+          - username: eve
+            email: eve@okdp.io
+            firstName: eve
+            lastName: eve
+            password: eve
+            roles: [auditor]
+          - username: adm
+            email: adm@okdp.io
+            firstName: adm
+            lastName: adm
+            password: adm
+            roles: [ platform_admin, polaris_service_admin, polaris_catalog_admin ]
+          - username: svc-spark-etl-polaris-writer
+            serviceAccountClientId: svc-spark-etl-polaris-writer
+            roles: [ data_engineer, data_scientist, business_analyst ]
+          # Add the polaris service account user
+          # Here the same service account has service_admin and catalog_admin in Polaris
+          # The service account behaves like a super admin, you can split as your convenience
+          - username: svc-polaris-api-admin
+            serviceAccountClientId: svc-polaris-api-admin
+            roles: [ polaris_service_admin, polaris_catalog_admin ]
+          - username: svc-trino-polaris-writer
+            serviceAccountClientId: svc-trino-polaris-writer
+            roles: [ platform_admin, polaris_service_admin, polaris_catalog_admin ]
+        roles:
+          - name: data_engineer
+          - name: data_scientist
+          - name: business_analyst
+          - name: platform_admin
+          - name: data_steward
+          - name: auditor
+          # Add the polaris management roles
+          # These roles can be named anyway,
+          # but they should map to polaris management roles (service_admin, and catalog_admin)
+          - name: polaris_service_admin
+          - name: polaris_catalog_admin
+        clients:
+          - clientId: okdp-server
+            name: okdp-server
+            publicClient: true
+            redirectUris:
+              - "https://okdp-server.{{ .Context.ingress.suffix }}/swagger/oauth2-redirect.html"
+            webOrigins:
+              - "https://okdp-server.{{ .Context.ingress.suffix }}"
+          - clientId: okdp-ui
+            name: okdp-ui
+            publicClient: true
+            redirectUris:
+              - "https://okdp-ui.{{ .Context.ingress.suffix }}/index.html"
+              - "https://okdp-ui.{{ .Context.ingress.suffix }}/silent-refresh.html"
+            webOrigins:
+              - "https://okdp-ui.{{ .Context.ingress.suffix }}"
+          - clientId: polaris-console
+            name: polaris-console
+            publicClient: true
+            redirectUris:
+              - "https://polaris-console-default.{{ .Context.ingress.suffix }}/auth/callback"
+            webOrigins:
+              - "https://polaris-console-default.{{ .Context.ingress.suffix }}"
+          - clientId: seaweedfs-s3
+            name: seaweedfs-s3
+            publicClient: true
+          - clientId: superset
+            name: superset
+            secret: mySupersetSecret
+            publicClient: false
+            redirectUris:
+              - "https://*"
+            webOrigins:
+              - "https://*"
+            defaultClientScopes:
+              - web-origins
+              - acr
+              - roles
+              - profile
+              - groups
+              - basic
+              - email
+            optionalClientScopes:
+              - address
+              - phone
+              - organization
+              - offline_access
+              - microprofile-jwt
+          - clientId: jupyterhub
+            name: jupyterhub
+            secret: myJupyterHubSecret
+            publicClient: false
+            redirectUris:
+              - "https://*"
+            webOrigins:
+              - "https://*"
+            defaultClientScopes:
+              - web-origins
+              - acr
+              - roles
+              - profile
+              - groups
+              - basic
+              - email
+            optionalClientScopes:
+              - address
+              - phone
+              - organization
+              - offline_access
+              - microprofile-jwt
+          - clientId: trino
+            name: trino
+            secret: myTrinoSecret
+            publicClient: false
+            redirectUris:
+              - "https://*"
+            webOrigins:
+              - "https://*"
+            defaultClientScopes:
+              - web-origins
+              - acr
+              - roles
+              - profile
+              - groups
+              - basic
+              - email
+            optionalClientScopes:
+              - address
+              - phone
+              - organization
+              - offline_access
+              - microprofile-jwt
+          - clientId: spark-history
+            name: spark-history
+            secret: mySparkHistorySecret
+            publicClient: false
+            redirectUris:
+              - "https://*"
+            webOrigins:
+              - "https://*"
+            defaultClientScopes:
+              - web-origins
+              - acr
+              - roles
+              - profile
+              - groups
+              - basic
+              - email
+            optionalClientScopes:
+              - address
+              - phone
+              - organization
+              - offline_access
+              - microprofile-jwt
+          - clientId: superset-trino
+            name: superset-trino
+            secret: mySupersetTrinoSecret
+            publicClient: false
+            redirectUris:
+              - "https://*"
+            webOrigins:
+              - "https://*"
+            defaultClientScopes:
+              - web-origins
+              - acr
+              - roles
+              - profile
+              - groups
+              - basic
+              - email
+            optionalClientScopes:
+              - address
+              - phone
+              - organization
+              - offline_access
+              - microprofile-jwt
+          - clientId: polaris
+            name: polaris
+            secret: myPolarisSecret
+            publicClient: false
+            # Enable service accounts on the polaris client
+            serviceAccountsEnabled: true
+            standardFlowEnabled: false
+            implicitFlowEnabled: false
+            directAccessGrantsEnabled: false
+            redirectUris:
+              - "https://*"
+            webOrigins:
+              - "https://*"
+            defaultClientScopes:
+              - web-origins
+              - acr
+              - roles
+              - profile
+              - groups
+              - basic
+              - email
+            optionalClientScopes:
+              - address
+              - phone
+              - organization
+              - offline_access
+              - microprofile-jwt
+          - clientId: airflow
+            name: airflow
+            secret: myAirflowSecret
+            publicClient: false
+            redirectUris:
+              - "https://*"
+            webOrigins:
+              - "https://*"
+            defaultClientScopes:
+              - web-origins
+              - acr
+              - roles
+              - profile
+              - groups
+              - basic
+              - email
+            optionalClientScopes:
+              - address
+              - phone
+              - organization
+              - offline_access
+              - microprofile-jwt
+          - clientId: svc-trino-polaris-writer
+            name: svc-trino-polaris-writer
+            secret: myTrinoPolarisSecret
+            publicClient: false
+            # Enable service accounts on the polaris client
+            serviceAccountsEnabled: true
+            standardFlowEnabled: false
+            implicitFlowEnabled: false
+            directAccessGrantsEnabled: false
+            defaultClientScopes:
+              - groups
+              - roles
+              - profile
+              - email
+          - clientId: svc-trino-examples-writer
+            name: svc-trino-examples-writer
+            secret: myTrinoExamplesSecret
+            publicClient: false
+            serviceAccountsEnabled: true
+            standardFlowEnabled: false
+            implicitFlowEnabled: false
+            directAccessGrantsEnabled: false
+            defaultClientScopes:
+              - groups
+              - roles
+              - profile
+              - email
+          - clientId: svc-polaris-api-admin
+            name: svc-polaris-api-admin
+            secret: myPolarisAdminSecret
+            publicClient: false
+            # Enable service accounts on the polaris client
+            serviceAccountsEnabled: true
+            standardFlowEnabled: false
+            implicitFlowEnabled: false
+            directAccessGrantsEnabled: false
+            defaultClientScopes:
+              - groups
+              - roles
+              - profile
+              - email
+          - clientId: svc-spark-etl-polaris-writer
+            name: svc-spark-etl-polaris-writer
+            secret: mySparkAppSecret
+            publicClient: false
+            # Enable service accounts on the polaris client
+            serviceAccountsEnabled: true
+            standardFlowEnabled: false
+            implicitFlowEnabled: false
+            directAccessGrantsEnabled: false
+            defaultClientScopes:
+              - groups
+              - roles
+              - profile
+              - email
+        clientScopes:
+          - name: groups
+            description: "Groups scope"
+            protocol: openid-connect
+            attributes:
+              include.in.token.scope: "false"
+              display.on.consent.screen: "true"
+            protocolMappers:
+              - name: roles_map_to_groups
+                protocol: openid-connect
+                protocolMapper: oidc-usermodel-realm-role-mapper
+                config:
+                  access.token.claim: "true"
+                  claim.name: groups
+                  id.token.claim: "true"
+                  introspection.token.claim: "true"
+                  jsonType.label: String
+                  lightweight.claim: "true"
+                  multivalued: "true"
+                  userinfo.token.claim: "true"
+
+    # Provision the following databases and configure the provider part.
+    # -- Sandbox-specific database provisioning for service databases and owners.
+    defaultDatabaseServer:
+      # Sandbox implementation-specific
+      # Consider this part already provided by your platform
+      # settings: {}
+      settings:
+        databases:
+          - name: hms
+            owner:
+              username: "hms"
+              passwordSecret: creds-hive-metastore-db
+          - name: superset
+            owner:
+              username: "superset"
+              passwordSecret: creds-superset-db
+          - name: keycloak
+            owner:
+              username: "keycloak"
+              passwordSecret: creds-keycloak-db
+          - name: seaweedfs
+            owner:
+              username: "seaweedfs"
+              passwordSecret: creds-seaweedfs-db
+          - name: polaris
+            owner:
+              username: "polaris"
+              passwordSecret: creds-polaris-db
+          - name: superset-examples
+            owner:
+              username: "examples"
+              passwordSecret: creds-superset-examples-db
+            schemas:
+              - main
+          - name: airflow
+            owner:
+              username: "airflow"
+              password: "airflow123"
+
+    # Create all the kubernetes secrets required by the services
+    # The provisioning is local, but you can provide them using external secrets or vault provider
+    # In order to have a predictable behaviour on re-deployment, we provision the secrets statically
+    # -- Local static secrets provisioning used by the sandbox examples when no external secret manager is configured.
+    localSecretsProvider:
+      info: |
+        Currently, the secrets are created inside the package `local-secrets-provider.yaml` itself.

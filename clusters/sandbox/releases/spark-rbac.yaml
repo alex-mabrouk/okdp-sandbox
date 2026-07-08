@@ -1,0 +1,12 @@
+apiVersion: kubocd.kubotal.io/v1alpha1
+kind: Release
+metadata:
+  name: spark-rbac
+  namespace: kubocd-system
+spec:
+  description: "Spark ServiceAccount and RBAC for Spark applications"
+  package:
+    repository: quay.io/okdp/platform-packages-v0.3/spark-rbac
+    tag: 1.0.1-p01
+  targetNamespace: default
+  createNamespace: false
