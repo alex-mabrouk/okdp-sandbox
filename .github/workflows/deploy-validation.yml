@@ -64,7 +64,7 @@ jobs:
       - name: Setup Flux CLI 🛠️
         uses: fluxcd/flux2/action@main
         with:
-          version: "2.6.4"
+          version: "2.7.5"
 
       - name: Deploy Flux (basic mode) 🚀
         run: flux install
