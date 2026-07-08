@@ -30,4 +30,4 @@ spec:
   targetNamespace: dns-server
   parameters:
     target: 127.0.0.1
-    nodePort: 30053 
+    nodePort: 30053

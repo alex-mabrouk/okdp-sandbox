@@ -52,4 +52,4 @@ spec:
     - name: platform
       namespace: kubocd-system
   targetNamespace: cert-manager
-  createNamespace: true 
+  createNamespace: true

@@ -81,4 +81,4 @@ spec:
         level: info
       metrics:
         enabled: false
-        secured: false 
+        secured: false

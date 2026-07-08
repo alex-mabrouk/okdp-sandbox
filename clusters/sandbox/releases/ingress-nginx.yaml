@@ -31,4 +31,4 @@ spec:
     httpPort: 30080
     httpsPort: 30443
   targetNamespace: ingress-nginx
-  createNamespace: true 
+  createNamespace: true

@@ -27,4 +27,4 @@ spec:
     repository: quay.io/okdp/platform-packages-v0.3/okdp-ui
     tag: 0.4.1-p02
     timeout: 10m
-  targetNamespace: okdp-ui 
+  targetNamespace: okdp-ui

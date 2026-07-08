@@ -35,4 +35,4 @@ spec:
     secretGenerator:
       enabled: true
   targetNamespace: kube-tools
-  createNamespace: true 
+  createNamespace: true
