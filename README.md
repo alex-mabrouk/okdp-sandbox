@@ -3,22 +3,10 @@
 [![Kubernetes](https://img.shields.io/badge/kubernetes-1.28+-blue.svg)](https://kubernetes.io/)
 [![Kind](https://img.shields.io/badge/kind-latest-orange.svg)](https://kind.sigs.k8s.io/)&ensp;&ensp;
 [![License Apache2](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
-<a href="https://okdp.io">
-  <img src="https://okdp.io/logos/okdp-notext.svg" height="20px" style="margin: 0 2px;" />
-</a>
-
-![OKDP UI Demo](https://raw.githubusercontent.com/OKDP/okdp-ui/main/docs/images/demo.gif)
 
 OKDP Sandbox is a hands-on environment for deploying, testing, and exploring the [OKDP](https://okdp.io) ecosystem on a local Kubernetes cluster.
 
-It provides a ready-to-use data platform environment that includes:
-- Identity and access management (Keycloak)
-- Object storage (SeaweedFS)
-- Spark processing and monitoring (Spark Operator + Spark History Server)
-- Workflow orchestration (Apache Airflow)
-- Interactive data science workspaces (JupyterHub)
-- Data visualization (Apache Superset)
-- Platform management (OKDP Server & UI)
+It provides a ready-to-use data platform environment covering identity, object storage, Spark processing, workflow orchestration, interactive notebooks, SQL querying, and visualization, running end to end on a local cluster. See [What is included](#what-is-included-in-the-sandbox) for the full component list.
 
 ## What is included in the sandbox?
 
@@ -33,19 +21,25 @@ The default OKDP sandbox deploys a complete local data-platform environment with
 - Apache Superset for dashboards and visual analytics
 - OKDP Server and OKDP UI for platform management
 
-## Repository status
+## Repository scope
 
-This repository is now a lightweight entry point. The reusable deployment assets have been moved to dedicated repositories so they can evolve independently from the sandbox.
+This repository owns the **single-cluster sandbox deployment**. It describes how to deploy the OKDP platform onto a local Kubernetes cluster and contains the deployment assets only:
 
-The implementation assets previously owned by this repository were migrated as follows:
+- `clusters/sandbox/flux/` : Flux bootstrap of the KuboCD controller (`kubocd.yaml`)
+- `clusters/sandbox/releases/` : KuboCD `Release` manifests (what gets installed, which package tag, which parameters)
+- `clusters/sandbox/contexts/` : the layered KuboCD `Context` files (`10-platform`, `20-provider`, `30-service`, `99-examples`)
+- `docs/` : deployment guides (DNS, certificates)
 
-| Asset | New owner | Reference |
-|---|---|---|
-| KuboCD packages, release definitions, context layers, package build and release automation | [`OKDP/platform-packages`](https://github.com/OKDP/platform-packages) | [`OKDP/platform-packages#1`](https://github.com/OKDP/platform-packages/pull/1), [`OKDP/okdp-sandbox#51`](https://github.com/OKDP/okdp-sandbox/issues/51) |
-| Reusable utility Helm charts | [`OKDP/helm-charts-utilities`](https://github.com/OKDP/helm-charts-utilities) | [`OKDP/helm-charts-utilities#1`](https://github.com/OKDP/helm-charts-utilities/pull/1), [`OKDP/okdp-sandbox#52`](https://github.com/OKDP/okdp-sandbox/issues/52) |
-| Notebooks, DAGs, and runnable examples | [`OKDP/okdp-examples`](https://github.com/OKDP/okdp-examples) | Examples repository |
+The **packages themselves** (the KuboCD packages bundled as OCI artifacts) live in a dedicated repository and are consumed here from the registry. This repository never builds packages, it only deploys published ones.
 
-As a result, this repository should no longer contain duplicated `.github/`, `clusters/`, or `packages/` directories.
+| Concern | Owner |
+|---|---|
+| KuboCD packages (system and services), build and release automation | [`OKDP/platform-packages`](https://github.com/OKDP/platform-packages) |
+| Reusable utility Helm charts | [`OKDP/helm-charts-utilities`](https://github.com/OKDP/helm-charts-utilities) |
+| Notebooks, DAGs, and runnable examples | [`OKDP/okdp-examples`](https://github.com/OKDP/okdp-examples) |
+| OKDP web UI | [`OKDP/okdp-ui`](https://github.com/OKDP/okdp-ui) |
+| OKDP backend server (API) | [`OKDP/okdp-server`](https://github.com/OKDP/okdp-server) |
+| Single-cluster sandbox deployment (this repository) | `OKDP/okdp-sandbox` |
 
 ## Prerequisites
 
@@ -59,17 +53,17 @@ As a result, this repository should no longer contain duplicated `.github/`, `cl
 - [Docker](https://docs.docker.com/get-docker/) or a compatible container runtime
 - [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation)
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
-- [Flux CLI](https://fluxcd.io/flux/installation/)
+- [Flux CLI v2.7.5](https://fluxcd.io/flux/installation/)
 
 ## Quick start
 
-The maintained sandbox deployment files now live in [`OKDP/platform-packages`](https://github.com/OKDP/platform-packages).
+The sandbox deployment files live in this repository under `clusters/sandbox/`.
 
-### 1. Clone the platform packages repository
+### 1. Clone this repository
 
 ```sh
-git clone https://github.com/OKDP/platform-packages.git
-cd platform-packages
+git clone https://github.com/OKDP/okdp-sandbox.git
+cd okdp-sandbox
 ```
 
 ### 2. Create Kubernetes Kind Cluster
@@ -213,7 +207,7 @@ kubectl wait --for=condition=ready pod -l app=source-controller -n flux-system -
 > It manages platform components and applications **declaratively**, providing a higher-level CD abstraction for GitOps workflows.
 
 ```sh
-kubectl apply -f kubocd.yaml
+kubectl apply -f clusters/sandbox/flux/kubocd.yaml
 ```
 
 #### Deploy/Upgrade OKDP platform components
@@ -262,10 +256,10 @@ Deploy/Upgrade the sandbox default context:
 
 
 ```sh
-kubectl apply -f 10-platform-context.yaml
-kubectl apply -f 20-provider-context.yaml
-kubectl apply -f 30-service-context.yaml
-kubectl apply -f 99-examples-context.yaml
+kubectl apply -f clusters/sandbox/contexts/10-platform-context.yaml
+kubectl apply -f clusters/sandbox/contexts/20-provider-context.yaml
+kubectl apply -f clusters/sandbox/contexts/30-service-context.yaml
+kubectl apply -f clusters/sandbox/contexts/99-examples-context.yaml
 ```
 
 > 💡 By default, the **default Context** uses **okdp.sandbox** as the ingress domain suffix.  
@@ -316,7 +310,7 @@ spec:
 Deploy/Upgrade OKDP components:
 
 ```sh
-kubectl apply -f releases/
+kubectl apply -f clusters/sandbox/releases/
 ```
 
 #### Verify and monitor release deployment status
@@ -391,16 +385,6 @@ Remove-Item "$env:TEMP\okdp-sandbox-config.yaml" -Force
 ```
 
 </details>
-
-## Related repositories
-
-| Repository | Purpose |
-|---|---|
-| [`OKDP/platform-packages`](https://github.com/OKDP/platform-packages) | KuboCD packages, release definitions, context layers, and deployment assets |
-| [`OKDP/helm-charts-utilities`](https://github.com/OKDP/helm-charts-utilities) | Reusable utility Helm charts consumed by packages and examples |
-| [`OKDP/okdp-examples`](https://github.com/OKDP/okdp-examples) | Notebooks, DAGs, and data-platform examples |
-| [`OKDP/okdp-ui`](https://github.com/OKDP/okdp-ui) | OKDP web UI |
-| [`OKDP/okdp-server`](https://github.com/OKDP/okdp-server) | OKDP backend server |
 
 ## License
 
