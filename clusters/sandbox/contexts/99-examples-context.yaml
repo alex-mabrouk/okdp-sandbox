@@ -848,6 +848,17 @@ spec:
           - username: svc-trino-polaris-writer
             serviceAccountClientId: svc-trino-polaris-writer
             roles: [ platform_admin, polaris_service_admin, polaris_catalog_admin ]
+          # Service account used by okdp-server to provision OIDC clients
+          # (identity.provisioning.provider: keycloak in the platform context).
+          # The username MUST be the real service-account username
+          # (service-account-<clientId>), otherwise config-cli creates a
+          # separate regular user instead of granting the service account.
+          # Sandbox shortcut: the master-realm "admin" realm role, because the
+          # declarative template cannot grant client roles. In production, grant
+          # only the realm-management "manage-clients" client role instead.
+          - username: service-account-okdp-provisioner
+            serviceAccountClientId: okdp-provisioner
+            roles: [ admin ]
         roles:
           - name: admins
           - name: data_engineer
@@ -893,6 +904,16 @@ spec:
               - organization
               - offline_access
               - microprofile-jwt
+          # Confidential client used by okdp-server (client_credentials) to
+          # manage OIDC clients through the Keycloak Admin API. Its secret must
+          # match the creds-okdp-provisioner Kubernetes Secret.
+          - clientId: okdp-provisioner
+            name: okdp-provisioner
+            secret: okdp-provisioner-sandbox-secret
+            serviceAccountsEnabled: true
+            standardFlowEnabled: false
+            redirectUris: []
+            webOrigins: []
           - clientId: polaris-console
             name: polaris-console
             publicClient: true
