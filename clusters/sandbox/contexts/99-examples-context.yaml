@@ -886,9 +886,12 @@ spec:
             redirectUris:
               - "https://okdp-ui.{{ .Context.ingress.suffix }}/index.html"
               - "https://okdp-ui.{{ .Context.ingress.suffix }}/silent-refresh.html"
+              # New console (deployed at console.<suffix>) — redirects to its origin
+              - "https://console.{{ .Context.ingress.suffix }}/*"
               - "http://localhost:4200/*"
             webOrigins:
               - "https://okdp-ui.{{ .Context.ingress.suffix }}"
+              - "https://console.{{ .Context.ingress.suffix }}"
               - "http://localhost:4200"
             defaultClientScopes:
               - web-origins

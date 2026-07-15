@@ -1,0 +1,35 @@
+#
+# Copyright 2026 The OKDP Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+
+# New OKDP console (roadmap: "Nouvelles versions okdp-server & okdp-ui"),
+# deployed ALONGSIDE the current okdp-ui while the new console is validated.
+# Same namespace as okdp-server-new: the console ingress routes /api to the
+# server Service by name. Exposed at https://console.<ingress suffix>.
+# The final switch will replace releases/okdp-ui.yaml with this package.
+apiVersion: kubocd.kubotal.io/v1alpha1
+kind: Release
+metadata:
+  name: okdp-ui-new
+  namespace: kubocd-system
+spec:
+  createNamespace: false
+  description: OKDP UI (new console) - Web interface for the Open Kubernetes Data Platform
+  package:
+    interval: 30m
+    repository: ghcr.io/alex-mabrouk/okdp-packages/okdp-ui
+    tag: 0.6.0-p01
+    timeout: 10m
+  targetNamespace: okdp-server-new
