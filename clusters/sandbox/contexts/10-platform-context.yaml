@@ -207,10 +207,11 @@ spec:
           category: Applications
           description: Hands-on OKDP examples, notebooks and data workflows.
 
-    # -- OIDC client provisioning: the only dynamic interaction okdp-server has
-    # with the identity provider. Credentials live in a Kubernetes Secret; the
-    # sandbox trusts its self-signed CA via insecureSkipTLSVerify.
+    # -- Identity
+    # Set to "kubauth" to enable the built-in fallback IdP and its user/group management API.
     identity:
+      provider: external
+      # -- OIDC client provisioning
       provisioning:
         provider: keycloak
         keycloak:
