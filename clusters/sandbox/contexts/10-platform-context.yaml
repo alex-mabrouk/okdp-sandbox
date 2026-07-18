@@ -211,6 +211,15 @@ spec:
     # Set to "kubauth" to enable the built-in fallback IdP and its user/group management API.
     identity:
       provider: external
+
+      # -- OIDC client the console UI authenticates with, served to the UI at
+      # bootstrap through GET /api/capabilities (one build, IdP = platform
+      # config). authority mirrors defaultIdp.provider.issuerUri because the
+      # server only reads this Context (same pattern as the root ingress block).
+      oidc:
+        authority: https://keycloak.okdp.sandbox/realms/master
+        clientId: okdp-ui
+        scope: openid profile email groups offline_access
       # -- OIDC client provisioning
       provisioning:
         provider: keycloak
