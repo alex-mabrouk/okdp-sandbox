@@ -873,25 +873,17 @@ spec:
           - name: polaris_service_admin
           - name: polaris_catalog_admin
         clients:
-          - clientId: okdp-server
-            name: okdp-server
-            publicClient: true
-            redirectUris:
-              - "https://okdp-server.{{ .Context.ingress.suffix }}/swagger/oauth2-redirect.html"
-            webOrigins:
-              - "https://okdp-server.{{ .Context.ingress.suffix }}"
+          # OKDP console (deployed at okdp-ui.<suffix>) + local dev of the UI.
+          # This client is also what the platform publishes to the UI through
+          # identity.oidc in the platform Context (GET /api/capabilities).
           - clientId: okdp-ui
             name: okdp-ui
             publicClient: true
             redirectUris:
-              - "https://okdp-ui.{{ .Context.ingress.suffix }}/index.html"
-              - "https://okdp-ui.{{ .Context.ingress.suffix }}/silent-refresh.html"
-              # New console (deployed at console.<suffix>) — redirects to its origin
-              - "https://console.{{ .Context.ingress.suffix }}/*"
+              - "https://okdp-ui.{{ .Context.ingress.suffix }}/*"
               - "http://localhost:4200/*"
             webOrigins:
               - "https://okdp-ui.{{ .Context.ingress.suffix }}"
-              - "https://console.{{ .Context.ingress.suffix }}"
               - "http://localhost:4200"
             defaultClientScopes:
               - web-origins
