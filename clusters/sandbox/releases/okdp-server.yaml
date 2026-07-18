@@ -25,6 +25,6 @@ spec:
   package:
     interval: 30m
     repository: ghcr.io/alex-mabrouk/okdp-packages/okdp-server
-    tag: 0.6.0-p01
+    tag: 0.6.0-p02
     timeout: 10m
   targetNamespace: okdp-server
