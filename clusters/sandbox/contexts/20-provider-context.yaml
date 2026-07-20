@@ -29,9 +29,9 @@ spec:
         name: RustFS
         region: dummy
         endpoints:
-          apiUrl: https://{{ .Release.metadata.name }}.{{ .Context.ingress.suffix }}
-          stsUrl: https://{{ .Release.metadata.name }}.{{ .Context.ingress.suffix }}
-          consoleUrl: https://{{ .Release.metadata.name }}-console.{{ .Context.ingress.suffix }}
+          apiUrl: https://{{ .Release.metadata.name }}-api.{{ .Context.ingress.suffix }}
+          stsUrl: https://{{ .Release.metadata.name }}-api.{{ .Context.ingress.suffix }}
+          consoleUrl: https://{{ .Release.metadata.name }}.{{ .Context.ingress.suffix }}
 
     # -- OIDC identity provider contract. The sandbox binds it to Keycloak, but any OIDC provider exposing these endpoints can be plugged in.
     defaultIdp:
