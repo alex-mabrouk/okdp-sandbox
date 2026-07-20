@@ -22,16 +22,16 @@ metadata:
 spec:
   # -- Provider interface bindings used by service contexts. Replace these with external providers that satisfy the same contracts.
   context:
-    # -- Object storage provider contract. The sandbox binds it to SeaweedFS using S3-compatible API, STS, and console endpoints.
+    # -- Object storage provider contract. The sandbox binds it to RustFS using S3-compatible API, STS, and console endpoints.
     defaultStorage:
       provider:
         type: s3
-        name: SeaweedFS
+        name: RustFS
         region: dummy
         endpoints:
-          apiUrl: https://seaweedfs-{{ .Release.namespace }}.{{ .Context.ingress.suffix }}
-          stsUrl: https://seaweedfs-{{ .Release.namespace }}.{{ .Context.ingress.suffix }}
-          consoleUrl: https://seaweedfs-console-{{ .Release.namespace }}.{{ .Context.ingress.suffix }}
+          apiUrl: https://{{ .Release.metadata.name }}.{{ .Context.ingress.suffix }}
+          stsUrl: https://{{ .Release.metadata.name }}.{{ .Context.ingress.suffix }}
+          consoleUrl: https://{{ .Release.metadata.name }}-console.{{ .Context.ingress.suffix }}
 
     # -- OIDC identity provider contract. The sandbox binds it to Keycloak, but any OIDC provider exposing these endpoints can be plugged in.
     defaultIdp:
