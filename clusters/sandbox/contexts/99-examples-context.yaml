@@ -733,6 +733,9 @@ spec:
           anonymousRead: true
         - name: hive
         - name: spark-events
+          # Spark's FsHistoryProvider fails to even start if its configured log directory
+          # doesn't already exist — S3 has no real directories, so this must be pre-seeded.
+          paths: [ event-logs ]
       grants:
         - principal: hiveMetastore
           actions: [ read, write, list ]
