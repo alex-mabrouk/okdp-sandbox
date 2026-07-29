@@ -418,7 +418,7 @@ spec:
                 "\n",
                 "You’ll be able to explore:\n",
                 "\n",
-                "- **[SeaweedFS](https://github.com/seaweedfs/seaweedfs)** for S3-compatible object storage\n",
+                "- **S3-compatible object storage** for the lakehouse data\n",
                 "- **[Hive Metastore](https://hive.apache.org/)** for table/catalog metadata\n",
                 "- **[Trino](https://trino.io/)** for interactive SQL queries\n",
                 "- **[Jupyter](https://jupyter.org/)** for notebooks and analysis\n",
@@ -438,7 +438,7 @@ spec:
                 "\n",
                 "## 🧭 What’s inside the repo\n",
                 "\n",
-                "- **Helm-driven workflows** to download public datasets and upload them to S3 (SeaweedFS)\n",
+                "- **Helm-driven workflows** to download public datasets and upload them to S3\n",
                 "- **Trino SQL** examples to create external tables and sync partitions\n",
                 "- **Jupyter notebooks** to query Trino (SQLAlchemy + native SQL)\n",
                 "- Optional **Superset** workflows for visualization\n",
@@ -888,9 +888,6 @@ spec:
               - "https://polaris-console-default.{{ .Context.ingress.suffix }}/auth/callback"
             webOrigins:
               - "https://polaris-console-default.{{ .Context.ingress.suffix }}"
-          - clientId: seaweedfs-s3
-            name: seaweedfs-s3
-            publicClient: true
           - clientId: superset
             name: superset
             secret: mySupersetSecret
@@ -1146,10 +1143,6 @@ spec:
             owner:
               username: "keycloak"
               passwordSecret: creds-keycloak-db
-          - name: seaweedfs
-            owner:
-              username: "seaweedfs"
-              passwordSecret: creds-seaweedfs-db
           - name: polaris
             owner:
               username: "polaris"
