@@ -44,7 +44,7 @@ spec:
         oidc:
           enabled: true
           provider: defaultIdp
-        packageRepository: quay.io/okdp/platform-packages-v0.3
+        packageRepository: quay.io/okdp/platform-packages
         clusters:
           - id: sandbox
             name: "OKDP Sandbox Cluster"
