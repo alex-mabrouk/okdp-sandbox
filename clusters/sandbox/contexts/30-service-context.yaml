@@ -211,7 +211,7 @@ spec:
         provider: defaultStorage
         # The access key is used for STS interactions between Polaris and S3 (sts:AssumeRole)
         # + catalog-side Iceberg metadata ops
-        # The Polaris SeaweedFS identity for STS
+        # This is the Polaris identity the storage backend registers for STS
         credentialsSecret:
           name: creds-polaris-s3
           accessKeyKey: accessKey
