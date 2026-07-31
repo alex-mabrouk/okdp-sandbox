@@ -52,8 +52,14 @@ spec:
       packageRepository: quay.io/okdp/platform-packages-v0.3
       services:
         - name: seaweedfs
-          default: 4.17.0-p3
-          versions: ["4.17.0-p3", "4.17.0-p2", "4.17.0-p1"]
+          # TEMPORARY: personal ghcr build adding the bucket paths required by the
+          # neutral storage contract — not submitted upstream yet, since the
+          # ownership of the SeaweedFS package is pending
+          # OKDP/platform-packages#37. Remove this repository override once the
+          # package is published to its final registry.
+          repository: ghcr.io/alex-mabrouk/okdp-packages
+          default: 4.17.0-p4
+          versions: ["4.17.0-p4","4.17.0-p3", "4.17.0-p2", "4.17.0-p1"]
           category: Storage
           description: SeaweedFS — S3-compatible distributed object storage.
         - name: hive-metastore
@@ -66,7 +72,11 @@ spec:
           versions: ["1.3.0-incubating-p01"]
           category: Data-Catalog
           description: Apache Polaris — REST catalog for Apache Iceberg.
-        - name: trinodb
+        - name: trino
+          # TEMPORARY: personal ghcr build while OKDP/platform-packages#35 is
+          # in review — remove this repository override once merged and
+          # published to quay.io/okdp/platform-packages-v0.3.
+          repository: ghcr.io/alex-mabrouk/okdp-packages
           default: 480.0.0-p04
           versions: ["480.0.0-p04", "480.0.0-p03", "480.0.0-p02", "480.0.0-p01"]
           category: Interactive-Query
