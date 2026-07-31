@@ -26,7 +26,7 @@ spec:
     defaultStorage:
       provider:
         type: s3
-        name: RustFS
+        name: storage
         region: dummy
         endpoints:
           apiUrl: https://storage-{{ .Release.namespace }}-api.{{ .Context.ingress.suffix }}
