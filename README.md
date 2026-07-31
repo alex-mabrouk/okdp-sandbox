@@ -147,6 +147,20 @@ kind create cluster --config "$env:TEMP\okdp-sandbox-config.yaml"
 flux install
 ```
 
+#### Install metrics-server
+
+```sh
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+kubectl patch deployment metrics-server -n kube-system --type=json \
+  -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"}]'
+```
+
+Verify it's working:
+
+```sh
+kubectl top nodes
+```
+
 #### Configure proxy settings for Flux controllers (Optional)
 
 If your environment requires a proxy to reach external sources (container registries), the following command sets the proxy configuration variables to all Flux controllers (source, kustomize, helm, notification):
