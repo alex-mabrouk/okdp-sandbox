@@ -40,23 +40,18 @@ spec:
         data: standard
         workspace: standard
 
-    # -- Root-level ingress contract read by the (new) okdp-server
-    # (GetIngressSuffix). Mirrors platform.ingress until the server reads it there.
+    # -- Root-level ingress contract read by the (new) okdp-server.
     ingress:
       suffix: okdp.sandbox
       className: nginx
 
-    # -- Catalog contract consumed by the (new) okdp-server console: deployable
-    # services with their published package tags (quay.io/okdp/platform-packages-v0.3).
+    # -- Catalog contract consumed by the (new) okdp-server console.
     okdp:
-      packageRepository: quay.io/okdp/platform-packages-v0.3
+      packageRepository: quay.io/okdp/platform-packages
       services:
         - name: seaweedfs
-          # TEMPORARY: personal ghcr build adding the bucket paths required by the
-          # neutral storage contract — not submitted upstream yet, since the
-          # ownership of the SeaweedFS package is pending
-          # OKDP/platform-packages#37. Remove this repository override once the
-          # package is published to its final registry.
+          # TEMPORARY: personal ghcr build while OKDP/prerequisites-packages#9 is in
+          # review — the package now lives in quay.io/okdp/prerequisites-packages.
           repository: ghcr.io/alex-mabrouk/okdp-packages
           default: 4.17.0-p4
           versions: ["4.17.0-p4","4.17.0-p3", "4.17.0-p2", "4.17.0-p1"]
@@ -73,12 +68,8 @@ spec:
           category: Data-Catalog
           description: Apache Polaris — REST catalog for Apache Iceberg.
         - name: trino
-          # TEMPORARY: personal ghcr build while OKDP/platform-packages#35 is
-          # in review — remove this repository override once merged and
-          # published to quay.io/okdp/platform-packages-v0.3.
-          repository: ghcr.io/alex-mabrouk/okdp-packages
-          default: 480.0.0-p04
-          versions: ["480.0.0-p04", "480.0.0-p03", "480.0.0-p02", "480.0.0-p01"]
+          default: 480.0.0-p06
+          versions: ["480.0.0-p06"]
           category: Interactive-Query
           description: Trino — distributed SQL query engine.
         - name: superset
@@ -112,10 +103,7 @@ spec:
     identity:
       provider: external
 
-      # -- OIDC client the console UI authenticates with, served to the UI at
-      # bootstrap through GET /api/capabilities (one build, IdP = platform
-      # config). authority mirrors defaultIdp.provider.issuerUri because the
-      # server only reads this Context (same pattern as the root ingress block).
+      # -- OIDC client the console UI receives at bootstrap through GET /api/capabilities.
       oidc:
         authority: https://keycloak.okdp.sandbox/realms/master
         clientId: okdp-ui

@@ -149,16 +149,6 @@ flux install
 
 #### Install metrics-server
 
-> ℹ️ **Note**  
-> This step is only required for a fresh installation.
-
-> ℹ️ Kind clusters don't ship [metrics-server](https://github.com/kubernetes-sigs/metrics-server)
-> by default. Without it, the Kubernetes Metrics API has nothing to report, and the OKDP console
-> shows CPU/Memory usage as unavailable for every service
->
-> The `--kubelet-insecure-tls` patch is required because Kind's kubelet serving certificates
-> aren't signed by a CA metrics-server trusts by default.
-
 ```sh
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 kubectl patch deployment metrics-server -n kube-system --type=json \

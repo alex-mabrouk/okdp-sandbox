@@ -22,11 +22,11 @@ metadata:
 spec:
   # -- Provider interface bindings used by service contexts. Replace these with external providers that satisfy the same contracts.
   context:
-    # -- Object storage provider contract. The sandbox binds it to RustFS using S3-compatible API, STS, and console endpoints.
+    # -- Object storage provider contract. The sandbox binds it to storage using S3-compatible API, STS, and console endpoints.
     defaultStorage:
       provider:
         type: s3
-        name: RustFS
+        name: storage
         region: dummy
         endpoints:
           apiUrl: https://storage-{{ .Release.namespace }}-api.{{ .Context.ingress.suffix }}

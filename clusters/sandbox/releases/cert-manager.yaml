@@ -22,7 +22,7 @@ metadata:
 spec:
   description: "Certificate management for Kubernetes with trust-manager and issuers"
   package:
-    repository: quay.io/okdp/platform-packages-v0.3/cert-manager
+    repository: quay.io/okdp/platform-packages/cert-manager
     tag: 1.17.1-p06
     interval: 30m
     timeout: 10m
