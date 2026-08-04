@@ -34,7 +34,8 @@ The **packages themselves** (the KuboCD packages bundled as OCI artifacts) live 
 
 | Concern | Owner |
 |---|---|
-| KuboCD packages (system and services), build and release automation | [`OKDP/platform-packages`](https://github.com/OKDP/platform-packages) |
+| KuboCD packages for core services and control plane | [`OKDP/platform-packages`](https://github.com/OKDP/platform-packages) |
+| KuboCD packages for third-party and bootstrap dependencies | [`OKDP/sandbox-dependencies`](https://github.com/OKDP/sandbox-dependencies) |
 | Reusable utility Helm charts | [`OKDP/helm-charts-utilities`](https://github.com/OKDP/helm-charts-utilities) |
 | Notebooks, DAGs, and runnable examples | [`OKDP/okdp-examples`](https://github.com/OKDP/okdp-examples) |
 | OKDP web UI | [`OKDP/okdp-ui`](https://github.com/OKDP/okdp-ui) |
