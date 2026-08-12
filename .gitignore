@@ -48,3 +48,11 @@ local/
 .OIDC*
 *.bak
 *.draft
+
+# Local kubectl cache
+.kube/
+
+# kubocd CLI work directories
+.render/
+.dump/
+.charts/
