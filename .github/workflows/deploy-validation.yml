@@ -20,13 +20,15 @@
 # then applies the contexts and releases from clusters/sandbox/ exactly as the
 # README instructs and waits until every KuboCD Release reaches READY.
 #
-# Unlike the package CI in OKDP/platform-packages, this workflow builds nothing:
-# it deploys the already-published packages (quay.io/okdp/platform-packages/<pkg>)
-# straight from the manifests, so it validates the deployment layer, not packages.
+# Unlike the package CI in OKDP/platform-packages and OKDP/sandbox-dependencies,
+# this workflow builds nothing: it deploys the already-published packages straight from
+# the manifests, so it validates the deployment layer, not the packages themselves.
 #
-# NOTE: the releases reference quay.io/okdp/platform-packages/<pkg> (no version
-# suffix), which only exists once OKDP/platform-packages#19 has merged and
-# republished. Until then this workflow is expected to fail.
+# Packages come from two registries, matching repository ownership:
+# - quay.io/okdp/sandbox-dependencies/<pkg>: third-party and bootstrap dependencies the sandbox needs but OKDP does not own.
+# - quay.io/okdp/platform-packages/<pkg>: OKDP core services and control plane.
+# Each release pins its own full path and tag; clusters/sandbox/releases/ is the
+# source of truth for which package comes from where.
 
 name: Deploy validation (sandbox e2e)
 

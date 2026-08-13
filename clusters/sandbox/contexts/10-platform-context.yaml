@@ -50,8 +50,8 @@ spec:
       packageRepository: quay.io/okdp/platform-packages
       services:
         - name: seaweedfs
-          # TEMPORARY: personal ghcr build while OKDP/prerequisites-packages#9 is in
-          # review — the package now lives in quay.io/okdp/prerequisites-packages.
+          # TEMPORARY: personal ghcr build while OKDP/sandbox-dependencies#9 is in
+          # review — the package now lives in quay.io/okdp/sandbox-dependencies.
           repository: ghcr.io/alex-mabrouk/okdp-packages
           default: 4.17.0-p4
           versions: ["4.17.0-p4","4.17.0-p3", "4.17.0-p2", "4.17.0-p1"]
