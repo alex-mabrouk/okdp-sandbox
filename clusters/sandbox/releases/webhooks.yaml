@@ -19,11 +19,13 @@ kind: Release
 metadata:
   name: kubocd-webhooks
   namespace: kubocd-system
+# failurePolicy=Fail: while its pod is down, every Release/Context write fails.
 spec:
   description: Second stage of kubocd installation
   package:
-    repository: quay.io/okdp/sandbox-dependencies/kubocd-webhooks
-    tag: v0.2.1-p01
+    repository: quay.io/kubotal/sandbox-dependencies/kubocd-webhooks
+    # Follows the controller: the package wraps the matching kubocd-wh chart.
+    tag: v0.3.2-p01
     interval: 30m
     timeout: 10m
   parameters:
