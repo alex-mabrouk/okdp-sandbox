@@ -1,0 +1,103 @@
+#
+# Copyright 2026 The OKDP Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+
+# Must exist before the Context below: releases would create it too late.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: okdp-system
+---
+# The platform Context, single source of platform truth: packages template
+# against it, the Control Plane server reads it and manages serviceCatalog.
+apiVersion: kubocd.kubotal.io/v1alpha1
+kind: Context
+metadata:
+  name: platform
+  namespace: okdp-system
+spec:
+  context:
+    ingress:
+      suffix: okdp.sandbox
+
+    # The 5 URLs are maintained by hand (changing the realm or the suffix means changing all five).
+    # In existing mode, the default client Secret name follows the creds-<release>-oauth2 convention.
+    oidc:
+      enabled: true
+      issuerUri: https://keycloak.okdp.sandbox/realms/master
+      authUrl: https://keycloak.okdp.sandbox/realms/master/protocol/openid-connect/auth
+      tokenUrl: https://keycloak.okdp.sandbox/realms/master/protocol/openid-connect/token
+      jwksUri: https://keycloak.okdp.sandbox/realms/master/protocol/openid-connect/certs
+      userinfoUrl: https://keycloak.okdp.sandbox/realms/master/protocol/openid-connect/userinfo
+      displayName: keycloak
+      scope: "openid profile email groups"
+      usePKCE: true
+      insecureSkipVerify: false
+      clientProvisioning: existing
+
+    proxy:
+      httpProxy: ""
+      httpsProxy: ""
+      noProxy: ""
+
+    certificateIssuers:
+      selfSigned:
+        name: default-issuer
+
+    storageClass:
+      data: standard
+      workspace: standard
+
+    serviceCatalog:
+      defaultRepository: quay.io/kubotal/platform-packages
+      # Written by the console too: a re-apply resets the catalog to this seed.
+      # Pre-Contract tags are not listed, the console no longer reads their marker.
+      services:
+        - name: hive-metastore
+          versions: ["4.0.1-cnx02"]
+          default: "4.0.1-cnx02"
+          description: Hive metastore
+          icon: pi-table
+          category: Data-Catalog
+        - name: superset
+          versions: ["6.0.0-cnx12"]
+          default: "6.0.0-cnx12"
+          description: Superset
+          category: Dataviz
+        - name: trino
+          versions: ["480.0.0-p17"]
+          default: "480.0.0-p17"
+          description: Trino
+          category: Interactive-Query
+        - name: polaris
+          versions: ["1.3.0-incubating-cnx09"]
+          default: "1.3.0-incubating-cnx09"
+          description: Apache Polaris Iceberg catalog
+          category: Data-Catalog
+        - name: jupyterhub
+          versions: ["4.3.3-cnx13"]
+          default: "4.3.3-cnx13"
+          description: JupyterHub
+          category: Notebook
+        - name: airflow
+          versions: ["3.2.1-cnx09"]
+          default: "3.2.1-cnx09"
+          description: Apache Airflow
+          category: Data-Engineering
+        - name: spark-history-server
+          versions: ["3.5.1-cnx10"]
+          default: "3.5.1-cnx10"
+          description: Spark History Server
+          category: Spark
