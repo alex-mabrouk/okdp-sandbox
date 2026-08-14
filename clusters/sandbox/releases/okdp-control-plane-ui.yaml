@@ -17,14 +17,16 @@
 apiVersion: kubocd.kubotal.io/v1alpha1
 kind: Release
 metadata:
-  name: okdp-ui
+  name: okdp-control-plane-ui
   namespace: kubocd-system
 spec:
   createNamespace: true
   description: OKDP UI - Frontend web interface for the Open Kubernetes Data Platform
   package:
     interval: 30m
-    repository: quay.io/okdp/platform-packages/okdp-ui
-    tag: 0.4.1-p02
+    repository: quay.io/okdp/platform-packages/okdp-control-plane-ui
+    tag: 0.8.0-p01
     timeout: 10m
-  targetNamespace: okdp-ui
+  parameters:
+    oidcAuthority: https://keycloak.okdp.sandbox/realms/master
+  targetNamespace: okdp-system
