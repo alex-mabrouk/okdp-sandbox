@@ -22,8 +22,8 @@ metadata:
 spec:
   description: "Certificate management for Kubernetes with trust-manager and issuers"
   package:
-    repository: quay.io/okdp/sandbox-dependencies/cert-manager
-    tag: 1.17.1-p06
+    repository: quay.io/kubotal/sandbox-dependencies/cert-manager
+    tag: 1.17.1-p08
     interval: 30m
     timeout: 10m
   parameters:
@@ -50,6 +50,6 @@ spec:
             size: 256
   contexts:
     - name: platform
-      namespace: kubocd-system
+      namespace: okdp-system
   targetNamespace: cert-manager
   createNamespace: true
