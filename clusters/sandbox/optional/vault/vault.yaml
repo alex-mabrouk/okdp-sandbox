@@ -1,0 +1,20 @@
+apiVersion: kubocd.kubotal.io/v1alpha1
+kind: Release
+metadata:
+  name: vault
+  namespace: kubocd-system
+spec:
+  description: HashiCorp Vault in dev mode, the backend a project SecretStore points at
+  # Its Ingress needs the ingress-nginx admission webhook up.
+  dependencies:
+    - ingress
+  package:
+    repository: quay.io/kubotal/sandbox-dependencies/vault
+    tag: 0.29.1-cnx02
+    interval: 30m
+    timeout: 10m
+  parameters:
+    # Unseals itself, keeps everything in memory. Sandbox only.
+    dev: true
+  targetNamespace: vault
+  createNamespace: true

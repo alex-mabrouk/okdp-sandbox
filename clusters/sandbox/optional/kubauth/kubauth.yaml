@@ -1,0 +1,21 @@
+apiVersion: kubocd.kubotal.io/v1alpha1
+kind: Release
+metadata:
+  name: kubauth
+  namespace: kubocd-system
+spec:
+  description: Kubauth, the Kubernetes-native OIDC provider the identity screens talk to
+  dependencies:
+    - ingress
+    - certManager
+  package:
+    repository: quay.io/kubotal/sandbox-dependencies/kubauth
+    tag: 0.3.0-snapshot-cnx01
+    interval: 30m
+    timeout: 10m
+  parameters:
+    oidcIngressHost: kubauth
+    oidcIngressAnnotations:
+      nginx.ingress.kubernetes.io/enable-cors: "true"
+  targetNamespace: kubauth
+  createNamespace: true
