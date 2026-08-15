@@ -1,0 +1,67 @@
+# The demo project's view of the optional storage component: same Release,
+# extended with the project buckets and one grant per consuming service.
+# Applying this file replaces the parameters of the storage Release from
+# clusters/sandbox/optional/storage/storage.yaml. Re-apply that file to
+# return to the platform-only store.
+apiVersion: kubocd.kubotal.io/v1alpha1
+kind: Release
+metadata:
+  name: storage
+  namespace: kubocd-system
+spec:
+  description: SeaweedFS object store (s3 Connection producer)
+  package:
+    repository: quay.io/kubotal/sandbox-dependencies/seaweedfs
+    tag: 4.17.0-p6
+    interval: 30m
+    timeout: 10m
+  parameters:
+    # The package ships no default for these two secrets, so they have to be
+    # set here. Sandbox values, assumed as such: moving them into a Secret
+    # instead of plain text remains to be done.
+    username: admin
+    password: sandbox-filer-pw
+    rootSecretKey: sandbox-seaweedfs-root
+    buckets:
+      - { name: hive, anonymousRead: true }
+      # event-logs is created by the provisioning module, spark-history writes into it.
+      - { name: spark-events, anonymousRead: true, paths: [event-logs] }
+      - { name: lakehouse, anonymousRead: true }
+      - { name: bronze, anonymousRead: true }
+      - { name: silver, anonymousRead: true }
+      - { name: gold, anonymousRead: true }
+      # orders_etl_daily writes its raw and parquet orders under this bucket.
+      - { name: airflow-logs }
+    grants:
+      # The store admin identity, consumed by project-layer s3 Connections.
+      # The principal cannot be named seaweedfs: the package already declares an
+      # identity of that name for the root key, and SeaweedFS keeps a single
+      # identity per name, which made the root key the provisioning needs vanish.
+      - principal: platformAdmin
+        credentialsSecret: { name: creds-seaweedfs-s3, accessKeyKey: accessKey, secretKeyKey: secretKey }
+        actions: [Admin]
+      - principal: hiveMetastore
+        credentialsSecret: { name: creds-hive-metastore-s3, accessKeyKey: accessKey, secretKeyKey: secretKey }
+        actions: [Read, Write, List]
+      - principal: trino
+        credentialsSecret: { name: creds-trino-s3, accessKeyKey: accessKey, secretKeyKey: secretKey }
+        actions: [Read, Write, List, Admin]
+      - principal: jupyterHub
+        credentialsSecret: { name: creds-jupyterhub-s3, accessKeyKey: accessKey, secretKeyKey: secretKey }
+        actions: [Read, Write, List]
+      - principal: sparkHistory
+        credentialsSecret: { name: creds-spark-history-s3, accessKeyKey: accessKey, secretKeyKey: secretKey }
+        actions: [Read, Write, List]
+      - principal: polaris
+        credentialsSecret: { name: creds-polaris-s3, accessKeyKey: accessKey, secretKeyKey: secretKey }
+        actions: [Read, Write, List, Admin]
+        sts: true
+      - principal: examples
+        credentialsSecret: { name: creds-examples-s3, accessKeyKey: accessKey, secretKeyKey: secretKey }
+        actions: [Admin, Read, Write, List]
+      - principal: airflow
+        credentialsSecret: { name: creds-airflow-s3, accessKeyKey: accessKey, secretKeyKey: secretKey }
+        actions: [Read, Write, List]
+  targetNamespace: default
+  createNamespace: true
+

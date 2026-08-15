@@ -1,0 +1,80 @@
+# Polaris does not expose catalogs declaratively: this Job creates the project
+# catalog through the management API, as the root principal. Idempotent, a
+# catalog already present is left alone.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: demo-polaris-catalog
+  namespace: demo
+spec:
+  backoffLimit: 10
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: create-catalog
+          image: curlimages/curl:latest
+          env:
+            - name: RCID
+              valueFrom: { secretKeyRef: { name: creds-polaris-root-okdp-sandbox, key: client_id } }
+            - name: RCS
+              valueFrom: { secretKeyRef: { name: creds-polaris-root-okdp-sandbox, key: client_secret } }
+            - name: AK
+              valueFrom: { secretKeyRef: { name: creds-seaweedfs-s3, key: accessKey } }
+            - name: SK
+              valueFrom: { secretKeyRef: { name: creds-seaweedfs-s3, key: secretKey } }
+          command:
+            - sh
+            - -c
+            - |
+              set -e
+              API=https://polaris-demo.okdp.sandbox
+              # Polaris is up when its token endpoint answers with a token: an
+              # ingress 404 or 503 while the service deploys must keep waiting.
+              while true; do
+                T=$(curl -sk -X POST "$API/api/catalog/v1/oauth/tokens" \
+                  -d grant_type=client_credentials -d client_id=$RCID -d client_secret=$RCS \
+                  -d scope=PRINCIPAL_ROLE:ALL | sed -n 's/.*"access_token":"//;s/".*//p')
+                [ -n "$T" ] && break
+                echo "waiting for Polaris..."; sleep 10
+              done
+              CODE=$(curl -sk -o /tmp/out -w "%{http_code}" -X POST "$API/api/management/v1/catalogs" \
+                -H "Authorization: Bearer $T" -H "Content-Type: application/json" \
+                -d "{\"catalog\":{\"name\":\"demo\",\"type\":\"INTERNAL\",\"properties\":{\"default-base-location\":\"s3://lakehouse/demo\",\"s3.endpoint\":\"http://storage-s3.default.svc.cluster.local:8333\",\"s3.path-style-access\":\"true\",\"s3.access-key-id\":\"$AK\",\"s3.secret-access-key\":\"$SK\",\"s3.region\":\"us-east-1\"},\"storageConfigInfo\":{\"storageType\":\"S3\",\"allowedLocations\":[\"s3://lakehouse/demo\"],\"endpoint\":\"http://storage-s3.default.svc.cluster.local:8333\",\"pathStyleAccess\":true,\"region\":\"us-east-1\"}}}")
+              cat /tmp/out; echo
+              case "$CODE" in
+                201) echo "catalog demo created" ;;
+                409) echo "catalog demo already present" ;;
+                *) echo "failed HTTP $CODE"; exit 1 ;;
+              esac
+
+              # A Keycloak user can only open the Polaris console if Polaris
+              # knows a principal of the same name: principalMapper reads
+              # preferred_username and DefaultAuthenticator rejects unknown
+              # names. polaris-admin cannot create one without a
+              # credentialsSecret, off-topic for a federated human.
+              for U in adm; do
+                C=$(curl -sk -o /tmp/p -w "%{http_code}" -X POST "$API/api/management/v1/principals" \
+                  -H "Authorization: Bearer $T" -H "Content-Type: application/json" \
+                  -d "{\"principal\":{\"name\":\"$U\",\"type\":\"USER\"}}")
+                case "$C" in
+                  201) echo "principal $U created" ;;
+                  409) echo "principal $U already present" ;;
+                  *) echo "principal $U failed HTTP $C"; cat /tmp/p; exit 1 ;;
+                esac
+                # Re-granting an already-granted role answers 500, not 409:
+                # Polaris surfaces the unique-key violation. Read first.
+                GRANTED=$(curl -sk -H "Authorization: Bearer $T" \
+                  "$API/api/management/v1/principals/$U/principal-roles")
+                for R in service_admin catalog_admin; do
+                  case "$GRANTED" in
+                    *"\"$R\""*) echo "  $U -> $R: already granted"; continue ;;
+                  esac
+                  C=$(curl -sk -o /dev/null -w "%{http_code}" -X PUT \
+                    "$API/api/management/v1/principals/$U/principal-roles" \
+                    -H "Authorization: Bearer $T" -H "Content-Type: application/json" \
+                    -d "{\"principalRole\":{\"name\":\"$R\"}}")
+                  [ "$C" = "201" ] || { echo "  $U -> $R failed HTTP $C"; exit 1; }
+                  echo "  $U -> $R: granted"
+                done
+              done

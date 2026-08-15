@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo
+  labels:
+    okdp.io/project: demo
+  annotations:
+    okdp.io/description: Demonstration project, full data chain

@@ -1,0 +1,93 @@
+# Project PostgreSQL: one CNPG cluster, one logical database per service.
+# The airflow role owns its database so the Airflow metadata connection string
+# can be static. CNPG requires a basic-auth Secret for managed role passwords.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: demo-airflow-db-role
+  namespace: demo
+type: kubernetes.io/basic-auth
+stringData:
+  username: "airflow"
+  password: "airflow123"
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: demo-pg
+  namespace: demo
+spec:
+  instances: 1
+  storage:
+    size: 2Gi
+    storageClass: standard
+  bootstrap:
+    initdb:
+      database: app
+      owner: app
+  managed:
+    roles:
+      - name: airflow
+        ensure: present
+        login: true
+        passwordSecret:
+          name: demo-airflow-db-role
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: demo-pg-hive
+  namespace: demo
+spec:
+  name: hive
+  owner: app
+  cluster:
+    name: demo-pg
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: demo-pg-superset
+  namespace: demo
+spec:
+  name: superset
+  owner: app
+  cluster:
+    name: demo-pg
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: demo-pg-superset-examples
+  namespace: demo
+spec:
+  name: superset_examples
+  owner: app
+  cluster:
+    name: demo-pg
+  # The Superset examples loader connects with search_path=main.
+  schemas:
+    - name: main
+      owner: app
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: demo-pg-polaris
+  namespace: demo
+spec:
+  name: polaris
+  owner: app
+  cluster:
+    name: demo-pg
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: demo-pg-airflow
+  namespace: demo
+spec:
+  name: airflow
+  owner: airflow
+  cluster:
+    name: demo-pg
