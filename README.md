@@ -1,25 +1,46 @@
 [![Flux](https://img.shields.io/badge/flux-latest-purple.svg)](https://fluxcd.io/)
-[![KuboCD](https://img.shields.io/badge/kubocd-v0.2.1-green.svg)](https://github.com/kubocd/kubocd)&ensp;&ensp;
+[![KuboCD](https://img.shields.io/badge/kubocd-v0.3.2-green.svg)](https://github.com/kubocd/kubocd)&ensp;&ensp;
 [![Kubernetes](https://img.shields.io/badge/kubernetes-1.28+-blue.svg)](https://kubernetes.io/)
 [![Kind](https://img.shields.io/badge/kind-latest-orange.svg)](https://kind.sigs.k8s.io/)&ensp;&ensp;
 [![License Apache2](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 
 OKDP Sandbox is a hands-on environment for deploying, testing, and exploring the [OKDP](https://okdp.io) ecosystem on a local Kubernetes cluster.
 
-It provides a ready-to-use data platform environment covering identity, object storage, Spark processing, workflow orchestration, interactive notebooks, SQL querying, and visualization, running end to end on a local cluster. See [What is included](#what-is-included-in-the-sandbox) for the full component list.
+It deploys the platform foundations (identity, object storage, SQL, secrets, ingress) and the OKDP Control Plane on a local cluster. Data services (Spark jobs, notebooks, SQL querying, dashboards) are then instantiated per project through the Control Plane. See [What is included](#what-is-included-in-the-sandbox) for the full component list.
 
 ## What is included in the sandbox?
 
-The default OKDP sandbox deploys a complete local data-platform environment with:
+The default OKDP sandbox deploys the platform foundations and the Control Plane:
 
 - Keycloak for identity and access management
-- SeaweedFS (or an alternative S3-compatible backend, e.g. RustFS) for object storage
-- Spark Operator and Spark History Server for Spark workloads and monitoring
-- Apache Airflow for workflow orchestration
-- JupyterHub for interactive data-science workspaces
-- Trino and Hive Metastore for SQL query and metadata services
-- Apache Superset for dashboards and visual analytics
-- OKDP Server and OKDP UI for platform management
+- CloudNativePG and a PostgreSQL instance for SQL storage
+- External Secrets for secret management
+- Spark Operator for Spark workloads
+- cert-manager and ingress-nginx for TLS and routing
+- OKDP Control Plane (server and UI) for platform management
+
+SeaweedFS (S3 object storage, needed by the data services, replaceable by any
+S3-compatible backend such as RustFS) and Vault (secret backend) are optional
+components: see
+[clusters/sandbox/optional](clusters/sandbox/optional/README.md).
+
+Data services (Airflow, JupyterHub, Trino, Hive Metastore, Superset, Spark
+History Server) are not part of the sandbox deployment: they are instantiated
+per project through the Control Plane.
+
+## The three layers
+
+The sandbox reads as three layers, each optional and building on the previous
+one:
+
+1. **The platform** (`clusters/sandbox/`): what the Quick start below deploys.
+2. **The demo project** (`clusters/sandbox/project-demo/`): a complete project
+   instance with its PostgreSQL, Connections and data services, the same shape
+   the Control Plane deploys from the service catalog. See
+   [its README](clusters/sandbox/project-demo/README.md).
+3. **Example workloads** (`clusters/sandbox/project-demo/examples/`): the
+   [okdp-examples](https://github.com/OKDP/okdp-examples) medallion lakehouse,
+   seeded onto the demo project.
 
 ## Repository scope
 
@@ -27,7 +48,10 @@ This repository owns the **single-cluster sandbox deployment**. It describes how
 
 - `clusters/sandbox/flux/` : Flux bootstrap of the KuboCD controller (`kubocd.yaml`)
 - `clusters/sandbox/releases/` : KuboCD `Release` manifests (what gets installed, which package tag, which parameters)
-- `clusters/sandbox/contexts/` : the layered KuboCD `Context` files (`10-platform`, `20-provider`, `30-service`, `99-examples`)
+- `clusters/sandbox/contexts/` : the platform `Context` (in `okdp-system`, whose namespace is declared at the top of the file)
+- `clusters/sandbox/contracts/` : the KuboCD `ClusterContract` files, applied before the contexts
+- `clusters/sandbox/optional/` : components the platform can run on but does not need, applied by hand only, see [its README](clusters/sandbox/optional/README.md)
+- `clusters/sandbox/project-demo/` : the demo project and its example workloads (layers 2 and 3), see [its README](clusters/sandbox/project-demo/README.md)
 - `docs/` : deployment guides (DNS, certificates)
 
 The **packages themselves** (the KuboCD packages bundled as OCI artifacts) live in dedicated repositories, split by ownership, OKDP core versus the third-party dependencies OKDP does not own and are consumed here from the registry. This repository never builds packages, it only deploys published ones.
@@ -38,8 +62,8 @@ The **packages themselves** (the KuboCD packages bundled as OCI artifacts) live 
 | KuboCD packages for third-party and bootstrap dependencies | [`OKDP/sandbox-dependencies`](https://github.com/OKDP/sandbox-dependencies) |
 | Reusable utility Helm charts | [`OKDP/helm-charts-utilities`](https://github.com/OKDP/helm-charts-utilities) |
 | Notebooks, DAGs, and runnable examples | [`OKDP/okdp-examples`](https://github.com/OKDP/okdp-examples) |
-| OKDP web UI | [`OKDP/okdp-ui`](https://github.com/OKDP/okdp-ui) |
-| OKDP backend server (API) | [`OKDP/okdp-server`](https://github.com/OKDP/okdp-server) |
+| Control Plane web UI | [`OKDP/okdp-control-plane-ui`](https://github.com/OKDP/okdp-control-plane-ui) |
+| Control Plane backend server (API) | [`OKDP/okdp-control-plane-server`](https://github.com/OKDP/okdp-control-plane-server) |
 | Single-cluster sandbox deployment (this repository) | `OKDP/okdp-sandbox` |
 
 ## Prerequisites
@@ -71,9 +95,13 @@ cd okdp-sandbox
 
 Create a Kind cluster configuration file and deploy the cluster:
 
-> ℹ️ [Kind](https://kind.sigs.k8s.io/) is a tool for running local Kubernetes clusters using Docker.  
+> <details>
+> <summary>ℹ️ <strong>Why Kind?</strong></summary>
+> 
+> [Kind](https://kind.sigs.k8s.io/) is a tool for running local Kubernetes clusters using Docker.  
 > It’s ideal for **development**, **testing**, and **sandbox reproducible environments**.  
 > Kind follows a **manifest-first** (infrastructure-as-code) approach, while **Minikube** is a **command-line-first** approach.
+> </details>
 
 ```sh
 # Create cluster configuration
@@ -129,40 +157,31 @@ kind create cluster --config "$env:TEMP\okdp-sandbox-config.yaml"
 ### 3. Install Platform Components
 #### Install Flux (GitOps engine)
 
-> ℹ️ **Note**  
-> This step is only required for a fresh installation. It is **not required for upgrades** if Flux is already installed and running.  
-> For upgrades, jump to [Deploy/Upgrade OKDP platform components](#deployupgrade-okdp-platform-components).
-
-> ℹ️ **[Flux](https://fluxcd.io/flux/concepts/)** is the GitOps controller that continuously reconciles your cluster state with what’s defined in Git.  
-> The following command installs all Flux core components:
-> - **source-controller**: fetches sources such as Git repositories and Helm charts  
-> - **kustomize-controller**: applies Kubernetes manifests using Kustomize  
-> - **helm-controller**: manages Helm releases declaratively  
-> - **notification-controller**: handles alerts and automation triggers  
+> ℹ️ Note
 >
-> 💡 In this setup, Flux controllers manage resources locally and are **not connected to a Git repository**.  
-> Manifests are applied manually with `kubectl`, so **no Git access is required**.
+> This step is only required for a fresh installation. If Flux is already installed and running, you do not need to install it again.  
+> For upgrades, go directly to [Deploy/Upgrade OKDP platform components](#deployupgrade-okdp-platform-components).
+> 
 
+> <details>
+> <summary>ℹ️ <strong>What is Flux and how is it used here?</strong></summary>
+>
+> **[Flux](https://fluxcd.io/flux/concepts/)** is the GitOps controller that continuously reconciles your cluster state with what’s defined in Git.  
+> The following command installs all Flux core components:
+> - **source-controller**: fetches sources such as Git repositories and Helm charts
+> - **kustomize-controller**: applies Kubernetes manifests using Kustomize
+> - **helm-controller**: manages Helm releases declaratively
+> - **notification-controller**: handles alerts and automation triggers
+>
+>  In this setup, Flux controllers manage resources locally and are **not connected to a Git repository**.  
+> Manifests are applied manually with `kubectl`, so **no Git access is required**.
+> </details>
 
 ```sh
 flux install
 ```
 
-#### Install metrics-server
-
-```sh
-kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-kubectl patch deployment metrics-server -n kube-system --type=json \
-  -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"}]'
-```
-
-Verify it's working:
-
-```sh
-kubectl top nodes
-```
-
-#### Configure proxy settings for Flux controllers (Optional)
+##### Configure proxy settings for Flux controllers (Optional):
 
 If your environment requires a proxy to reach external sources (container registries), the following command sets the proxy configuration variables to all Flux controllers (source, kustomize, helm, notification):
 
@@ -188,18 +207,22 @@ if ($env:HTTPS_PROXY -or $env:https_proxy) {
 
 </details>
 
-Verify the proxy environment variables are correctly set for all Flux controllers:
-
-> 💡 You may see the same variable (e.g., `HTTPS_PROXY`) repeated multiple times,
-> one for each controller (**source**, **kustomize**, **helm**, **notification**).  
-> This is expected and confirms that the variables were applied consistently.
+##### Verify the proxy environment variables are correctly set for all Flux controllers (Optional):
 
 ```sh
 kubectl -n flux-system set env deploy -l app.kubernetes.io/part-of=flux --list \
                                          | grep PROXY
 ```
 
-> 💡 **Use the following command if you want to remove the proxy configuration from Flux controllers:**  
+> 💡 You may see the same variable (e.g., `HTTPS_PROXY`) repeated multiple times,
+> one for each controller (**source**, **kustomize**, **helm**, **notification**).  
+> This is expected and confirms that the variables were applied consistently.
+
+
+> <details>
+> <summary>💡 <strong>How to remove the Flux proxy configuration?</strong></summary>
+>
+> **Use the following command if you want to remove the proxy configuration from Flux controllers:**  
 > After removing the proxy, Flux will **no longer be able to pull images or manifests from external registries** that require proxy access.
 >
 > ```sh
@@ -207,27 +230,86 @@ kubectl -n flux-system set env deploy -l app.kubernetes.io/part-of=flux --list \
 >    HTTPS_PROXY- \
 >    NO_PROXY-
 > ```
+> </details>
 
-#### Wait for Flux controllers to be ready
+##### Wait for Flux controllers to be ready
 
 Ensures all Flux controllers (source-controller, kustomize-controller, helm-controller, notification-controller) are fully running before proceeding to the next step:
 
 ```sh
-kubectl wait --for=condition=ready pod -l app=source-controller -n flux-system --timeout=300s
+kubectl -n flux-system wait --for=condition=Available deploy \
+  -l app.kubernetes.io/part-of=flux --timeout=300s
 ```
 
 #### Install KuboCD (Flux extension)
-
+> <details>
+> <summary>ℹ️ <strong>What is KuboCD?</strong></summary>
+>
 > ℹ️ [KuboCD](https://www.kubocd.io/) is the continuous delivery layer built on top of **Flux**.  
 > It manages platform components and applications **declaratively**, providing a higher-level CD abstraction for GitOps workflows.
+> </details>
 
 ```sh
 kubectl apply -f clusters/sandbox/flux/kubocd.yaml
 ```
 
+##### Wait for KuboCD to be installed before continuing:
+
+1. Wait for Flux to finish installing KuboCD chart:
+
+```sh
+kubectl -n flux-system wait --for=condition=Ready helmrelease/kubocd-controller --timeout=300s
+```
+
+2. Wait for KuboCD CRDs to be registered:
+
+```sh
+kubectl wait --for=condition=Established --timeout=300s \
+  crd/contexts.kubocd.kubotal.io \
+  crd/releases.kubocd.kubotal.io \
+  crd/configs.kubocd.kubotal.io
+```
+
+3. Wait for KuboCD controller to be up:
+
+```sh
+kubectl -n kubocd wait --for=condition=Available deploy/kubocd-ctrl-controller --timeout=300s
+```
+
+#### Install metrics-server
+
+```sh
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+kubectl patch deployment metrics-server -n kube-system --type=json \
+  -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"}]'
+```
+
+##### Wait for metrics-server to be ready:
+
+1. Wait for the patched pod to roll out:
+
+```sh
+kubectl -n kube-system rollout status deploy/metrics-server --timeout=300s
+```
+
+2. Wait for the metrics API to be served:
+
+```sh
+kubectl wait --for=condition=Available apiservice/v1beta1.metrics.k8s.io --timeout=300s
+```
+
+3. Verify it's working:
+
+```sh
+kubectl top nodes
+```
+
+> 💡 `kubectl top nodes` may still report `metrics not available yet` for a few seconds
+> after the API becomes available, until the first scrape completes. Re-run it if so.
+
 #### Deploy/Upgrade OKDP platform components
 
-> ℹ️ **Note**  
+> 💡 **Upgrade note**  
 > To upgrade the OKDP platform components, run:
 >
 > ```bash
@@ -253,9 +335,12 @@ kubectl apply -f clusters/sandbox/flux/kubocd.yaml
 >
 
 
-Deploy/Upgrade the sandbox default context:
+##### Deploy/Upgrade the sandbox default context:
 
-> 💡 **The KuboCD Context** is a centralized, reusable, declarative and environment-aware configuration layer that provides user defined shared parameters (ingress suffixes, storage classes, certificate issuers, catalogs, and authentication settings, etc) to all the components, ensuring consistent deployment.
+> <details>
+> <summary>ℹ️ <strong>What is KuboCD Context?</strong></summary>
+>
+> **KuboCD Context** is a centralized, reusable, declarative and environment-aware configuration layer that provides user defined shared parameters (ingress suffixes, storage classes, certificate issuers, catalogs, and authentication settings, etc) to all the components, ensuring consistent deployment.
 >
 > During deployment, KuboCD automatically resolves and injects these context variables into the target Kubernetes components across the cluster (cluster-wide), ensuring that every component is deployed with a consistent configuration.
 >
@@ -268,14 +353,15 @@ Deploy/Upgrade the sandbox default context:
 > - `org` (or `global`) for the organization-wide configuration that provides defaults to other environments.
 >
 > Each environment can **define, override or extend** one or more contexts while preserving a unified, declarative deployment model.
+> </details>
 
 
 ```sh
-kubectl apply -f clusters/sandbox/contexts/10-platform-context.yaml
-kubectl apply -f clusters/sandbox/contexts/20-provider-context.yaml
-kubectl apply -f clusters/sandbox/contexts/30-service-context.yaml
-kubectl apply -f clusters/sandbox/contexts/99-examples-context.yaml
+kubectl apply -f clusters/sandbox/contracts/
+kubectl apply -f clusters/sandbox/contexts/
 ```
+
+##### Configure a custom ingress domain for OKDP Services (Optional)
 
 > 💡 By default, the **default Context** uses **okdp.sandbox** as the ingress domain suffix.  
 > This domain may be blocked if it does not comply with your organization’s allowed domain policy.  
@@ -283,38 +369,36 @@ kubectl apply -f clusters/sandbox/contexts/99-examples-context.yaml
 > Use the following command to update the domain suffix to match your organization’s domain (replace **<CUSTOM_DOMAIN>** with your actual domain name):
 >
 > ```sh
-> kubectl -n kubocd-system patch context platform \
->   -p '{"spec":{"context":{"platform":{"ingress":{"suffix":"<CUSTOM_DOMAIN>"}}}}}' \
+> kubectl -n okdp-system patch context platform \
+>   -p '{"spec":{"context":{"ingress":{"suffix":"<CUSTOM_DOMAIN>"}}}}' \
 >   --type=merge
 > ```
 
-Configure proxy settings for OKDP Services (Optional)
+##### Configure proxy settings for OKDP Services (Optional)
 
-If your environment requires a proxy to reach external datasets (Superset examples, okdp examples, quay.io KuboCD packages), the following command sets the proxy configuration variables to the required OKDP services:
-
-```sh
-kubectl -n kubocd-system patch context platform --type merge -p "$(cat <<EOF
-spec:
-  context:
-    platform:
-      proxy:
-        httpProxy: "${HTTP_PROXY:-${http_proxy}}"
-        httpsProxy: "${HTTPS_PROXY:-${https_proxy}}"
-        noProxy: "${NO_PROXY:-${no_proxy}}"
-EOF
-)"
-```
+> 💡 If your environment requires a proxy to reach external datasets (Superset examples, okdp examples, quay.io KuboCD packages), the following command sets the proxy configuration variables to the required OKDP services:
+>
+> ```sh
+> kubectl -n okdp-system patch context platform --type merge -p "$(cat <<EOF
+> spec:
+>   context:
+>     proxy:
+>       httpProxy: "${HTTP_PROXY:-${http_proxy}}"
+>       httpsProxy: "${HTTPS_PROXY:-${https_proxy}}"
+>       noProxy: "${NO_PROXY:-${no_proxy}}"
+> EOF
+> )"
+> ```
 
 <details>
 <summary><strong><small>PowerShell</small></strong></summary>
 <br>
 
 ```powershell
-kubectl -n kubocd-system patch context platform --type merge -p @"
+kubectl -n okdp-system patch context platform --type merge -p @"
 spec:
   context:
-    platform:
-      proxy:
+    proxy:
         httpProxy: "$($env:HTTP_PROXY ?? $env:http_proxy)"
         httpsProxy: "$($env:HTTPS_PROXY ?? $env:https_proxy)"
         noProxy: "$($env:NO_PROXY ?? $env:no_proxy)"
@@ -322,20 +406,29 @@ spec:
 ```
 </details>
 
-Deploy/Upgrade OKDP components:
+##### Deploy/Upgrade OKDP components:
 
 ```sh
 kubectl apply -f clusters/sandbox/releases/
 ```
 
-#### Verify and monitor release deployment status
+> ℹ️ **Installing optional components:**
+> 
+> The directory [clusters/sandbox/optional](clusters/sandbox/optional) is deliberately excluded from that apply. It contains components that are supported by the platform but are not required, including KubAuth, SeaweedFS, and HashiCorp Vault.  
+> To install an optional component, see [clusters/sandbox/optional/README.md](clusters/sandbox/optional/README.md) for its purpose and configuration.
+
+##### Verify and monitor release deployment status
 
 Watch releases as they are deployed until all the components become ready.
 
 ```sh
 kubectl get releases -A --watch
-# Wait until all releases show STATUS=READY (press Ctrl+C to exit watch)
-# Alternative: kubectl wait --for=condition=ready release --all --all-namespaces --timeout=600s
+```
+
+Or block until every release is ready instead of watching:
+
+```sh
+kubectl wait --for=jsonpath='{.status.phase}'=READY release --all -n kubocd-system --timeout=900s
 ```
 
 ### 4. DNS Setup
@@ -381,7 +474,9 @@ kubectl get secret default-issuer -n cert-manager -o jsonpath='{.data.ca\.crt}' 
 
 1. **Access OKDP UI**: https://okdp-ui.okdp.sandbox or https://okdp-ui.<CUSTOM_DOMAIN>
 2. **Login credentials**: Default authentication via Keycloak (login/password: adm/adm)
-3. **Run the examples**: https://github.com/OKDP/okdp-examples
+3. **Deploy the demo project**: Follow the [demo project guide](clusters/sandbox/project-demo/README.md) to provision the demo project using kubectl (namespace, storage, database, connections, and data services).
+   > **ℹ️ Note:** A project can also be provisioned directly through the OKDP UI instead of using `kubectl`.
+4. **Run the examples**: Once the demo project is ready, follow [OKDP examples guide](https://github.com/OKDP/okdp-examples) to run the examples.
 
 ## Cleanup
 
