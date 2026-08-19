@@ -155,7 +155,7 @@ spec:
   description: Airflow of the demo project
   package:
     repository: quay.io/kubotal/platform-packages/airflow
-    tag: 3.2.1-cnx09
+    tag: 3.2.1-cnx10
     interval: 30m
     timeout: 10m
   parameters:
