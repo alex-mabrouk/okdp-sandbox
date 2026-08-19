@@ -22,16 +22,16 @@ metadata:
 spec:
   # -- Provider interface bindings used by service contexts. Replace these with external providers that satisfy the same contracts.
   context:
-    # -- Object storage provider contract. The sandbox binds it to SeaweedFS using S3-compatible API, STS, and console endpoints.
+    # -- Object storage provider contract. The sandbox binds it to storage using S3-compatible API, STS, and console endpoints.
     defaultStorage:
       provider:
         type: s3
-        name: SeaweedFS
+        name: storage
         region: dummy
         endpoints:
-          apiUrl: https://seaweedfs-{{ .Release.namespace }}.{{ .Context.ingress.suffix }}
-          stsUrl: https://seaweedfs-{{ .Release.namespace }}.{{ .Context.ingress.suffix }}
-          consoleUrl: https://seaweedfs-console-{{ .Release.namespace }}.{{ .Context.ingress.suffix }}
+          apiUrl: https://storage-{{ .Release.namespace }}-api.{{ .Context.ingress.suffix }}
+          stsUrl: https://storage-{{ .Release.namespace }}-api.{{ .Context.ingress.suffix }}
+          consoleUrl: https://storage-{{ .Release.namespace }}.{{ .Context.ingress.suffix }}
 
     # -- OIDC identity provider contract. The sandbox binds it to Keycloak, but any OIDC provider exposing these endpoints can be plugged in.
     defaultIdp:
@@ -45,6 +45,7 @@ spec:
           tokenUrl: "https://keycloak.{{ .Context.ingress.suffix }}/realms/master/protocol/openid-connect/token"
           userinfoUrl: "https://keycloak.{{ .Context.ingress.suffix }}/realms/master/protocol/openid-connect/userinfo"
           jwksUri: "https://keycloak.{{ .Context.ingress.suffix }}/realms/master/protocol/openid-connect/certs"
+          clientRegistrationUrl: "https://keycloak.{{ .Context.ingress.suffix }}/realms/master/clients-registrations/openid-connect"
 
     # -- Database server provider contract for services that need PostgreSQL-compatible databases.
     defaultDatabaseServer:

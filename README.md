@@ -30,11 +30,12 @@ This repository owns the **single-cluster sandbox deployment**. It describes how
 - `clusters/sandbox/contexts/` : the layered KuboCD `Context` files (`10-platform`, `20-provider`, `30-service`, `99-examples`)
 - `docs/` : deployment guides (DNS, certificates)
 
-The **packages themselves** (the KuboCD packages bundled as OCI artifacts) live in a dedicated repository and are consumed here from the registry. This repository never builds packages, it only deploys published ones.
+The **packages themselves** (the KuboCD packages bundled as OCI artifacts) live in dedicated repositories, split by ownership, OKDP core versus the third-party dependencies OKDP does not own and are consumed here from the registry. This repository never builds packages, it only deploys published ones.
 
 | Concern | Owner |
 |---|---|
-| KuboCD packages (system and services), build and release automation | [`OKDP/platform-packages`](https://github.com/OKDP/platform-packages) |
+| KuboCD packages for core services and control plane | [`OKDP/platform-packages`](https://github.com/OKDP/platform-packages) |
+| KuboCD packages for third-party and bootstrap dependencies | [`OKDP/sandbox-dependencies`](https://github.com/OKDP/sandbox-dependencies) |
 | Reusable utility Helm charts | [`OKDP/helm-charts-utilities`](https://github.com/OKDP/helm-charts-utilities) |
 | Notebooks, DAGs, and runnable examples | [`OKDP/okdp-examples`](https://github.com/OKDP/okdp-examples) |
 | OKDP web UI | [`OKDP/okdp-ui`](https://github.com/OKDP/okdp-ui) |
@@ -145,6 +146,20 @@ kind create cluster --config "$env:TEMP\okdp-sandbox-config.yaml"
 
 ```sh
 flux install
+```
+
+#### Install metrics-server
+
+```sh
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+kubectl patch deployment metrics-server -n kube-system --type=json \
+  -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"}]'
+```
+
+Verify it's working:
+
+```sh
+kubectl top nodes
 ```
 
 #### Configure proxy settings for Flux controllers (Optional)

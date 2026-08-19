@@ -26,7 +26,7 @@ spec:
     instance (cluster) and includes ownership, access credentials, and lifecycle management through Kubernetes-native CRDs.
   package:
     interval: 30m
-    repository: quay.io/okdp/platform-packages-v0.3/cnpg-postgresql
+    repository: quay.io/okdp/sandbox-dependencies/cnpg-postgresql
     tag: 18.3-p01
     timeout: 10m
   targetNamespace: cnpg-system

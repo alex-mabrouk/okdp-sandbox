@@ -44,7 +44,7 @@ spec:
         oidc:
           enabled: true
           provider: defaultIdp
-        packageRepository: quay.io/okdp/platform-packages-v0.3
+        packageRepository: quay.io/okdp/platform-packages
         clusters:
           - id: sandbox
             name: "OKDP Sandbox Cluster"
@@ -76,7 +76,7 @@ spec:
             name: "Interactive Query"
             description: "Interactive-query packages"
             packages:
-              - name: trinodb
+              - name: trino
           - id: Data-Catalog
             name: "Data Catalog"
             description: "Central metadata catalog packages"
