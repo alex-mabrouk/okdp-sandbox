@@ -10,7 +10,7 @@ spec:
     - ingress
   package:
     repository: quay.io/kubotal/sandbox-dependencies/vault
-    tag: 0.29.1-cnx02
+    tag: 0.29.1-p01
     interval: 30m
     timeout: 10m
   parameters:

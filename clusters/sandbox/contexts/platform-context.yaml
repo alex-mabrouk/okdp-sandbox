@@ -66,38 +66,38 @@ spec:
       # Pre-Contract tags are not listed, the console no longer reads their marker.
       services:
         - name: hive-metastore
-          versions: ["4.0.1-cnx02"]
-          default: "4.0.1-cnx02"
+          versions: ["4.0.1-p02"]
+          default: "4.0.1-p02"
           description: Hive metastore
           icon: pi-table
           category: Data-Catalog
         - name: superset
-          versions: ["6.0.0-cnx12"]
-          default: "6.0.0-cnx12"
+          versions: ["6.0.0-p02"]
+          default: "6.0.0-p02"
           description: Superset
           category: Dataviz
         - name: trino
-          versions: ["480.0.0-p17"]
-          default: "480.0.0-p17"
+          versions: ["480.0.0-p19"]
+          default: "480.0.0-p19"
           description: Trino
           category: Interactive-Query
         - name: polaris
-          versions: ["1.3.0-incubating-cnx09"]
-          default: "1.3.0-incubating-cnx09"
+          versions: ["1.3.0-incubating-p02"]
+          default: "1.3.0-incubating-p02"
           description: Apache Polaris Iceberg catalog
           category: Data-Catalog
         - name: jupyterhub
-          versions: ["4.3.3-cnx13"]
-          default: "4.3.3-cnx13"
+          versions: ["4.3.3-p03"]
+          default: "4.3.3-p03"
           description: JupyterHub
           category: Notebook
         - name: airflow
-          versions: ["3.2.1-cnx09"]
-          default: "3.2.1-cnx09"
+          versions: ["3.2.1-p03"]
+          default: "3.2.1-p03"
           description: Apache Airflow
           category: Data-Engineering
         - name: spark-history-server
-          versions: ["3.5.1-cnx10"]
-          default: "3.5.1-cnx10"
+          versions: ["3.5.1-p05"]
+          default: "3.5.1-p05"
           description: Spark History Server
           category: Spark
