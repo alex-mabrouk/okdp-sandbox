@@ -57,8 +57,8 @@ kubectl -n okdp-system patch context platform --type=merge \
   -p '{"spec":{"context":{"identity":{"kubauth":{"namespace":"kubauth-users"}}}}}'
 ```
 
-**3. Hand the OIDC clients over to kubauth**, which is what makes the packages
-generate their clients instead of reading a Secret name:
+**3. Hand the OIDC clients over to kubauth**, so the console offers to mint a
+client rather than asking for the name of an existing Secret:
 
 ```sh
 kubectl -n okdp-system patch context platform --type=merge \
@@ -68,6 +68,17 @@ kubectl -n okdp-system patch context platform --type=merge \
 The server refuses to start when this says kubauth and the kubauth CRDs are
 absent, so install the component first.
 
+**4. Tell the packages the same thing.** The three keys above are read by the
+server. A package mints its own client from a second pair, under `oidc`, and
+without them a Release stays on the Secret it is handed:
+
+```sh
+kubectl -n okdp-system patch context platform --type=merge \
+  -p '{"spec":{"context":{"oidc":{"clientProvisioning":"kubauth","kubauth":{"namespace":"kubauth-users"}}}}}'
+```
+
+Two pairs of keys for one decision is a wart, tracked separately. Set both.
+
 **This third step switches the platform over.** Every package that was handed a
 Secret name now generates its own client through kubauth, so the Releases
 reconcile against a different provider. Do not run it on a sandbox you need
@@ -76,7 +87,7 @@ working in the next few minutes.
 Check the whole chain answered:
 
 ```sh
-kubectl -n okdp-system exec deploy/okdp-control-plane-server -- \
+kubectl -n okdp-system exec deploy/okdp-control-plane-server-main -- \
   wget -qO- http://localhost:8093/api/capabilities
 ```
 
