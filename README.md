@@ -267,7 +267,9 @@ kubectl -n flux-system wait --for=condition=Ready helmrelease/kubocd-controller 
 kubectl wait --for=condition=Established --timeout=300s \
   crd/contexts.kubocd.kubotal.io \
   crd/releases.kubocd.kubotal.io \
-  crd/configs.kubocd.kubotal.io
+  crd/configs.kubocd.kubotal.io \
+  crd/clustercontracts.kubocd.kubotal.io \
+  crd/connections.kubocd.kubotal.io
 ```
 
 3. Wait for KuboCD controller to be up:
@@ -375,10 +377,22 @@ kubectl apply -f clusters/sandbox/contexts/
 > Use the following command to update the domain suffix to match your organization’s domain (replace **<CUSTOM_DOMAIN>** with your actual domain name):
 >
 > ```sh
-> kubectl -n okdp-system patch context platform \
->   -p '{"spec":{"context":{"ingress":{"suffix":"<CUSTOM_DOMAIN>"}}}}' \
->   --type=merge
+> kubectl -n okdp-system patch context platform --type=merge -p '{
+>   "spec": { "context": {
+>     "ingress": { "suffix": "<CUSTOM_DOMAIN>" },
+>     "oidc": {
+>       "issuerUri":   "https://keycloak.<CUSTOM_DOMAIN>/realms/master",
+>       "authUrl":     "https://keycloak.<CUSTOM_DOMAIN>/realms/master/protocol/openid-connect/auth",
+>       "tokenUrl":    "https://keycloak.<CUSTOM_DOMAIN>/realms/master/protocol/openid-connect/token",
+>       "jwksUri":     "https://keycloak.<CUSTOM_DOMAIN>/realms/master/protocol/openid-connect/certs",
+>       "userinfoUrl": "https://keycloak.<CUSTOM_DOMAIN>/realms/master/protocol/openid-connect/userinfo"
+>     }
+>   } }
+> }'
 > ```
+>
+> The OIDC endpoints carry the domain too. Patching the suffix alone moves the
+> Keycloak route while the services keep validating tokens against the old host.
 
 ##### Configure proxy settings for OKDP Services (Optional)
 
