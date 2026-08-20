@@ -38,10 +38,9 @@ in `admin.yaml` before doing anything you would regret.
 
 ### Point the Control Plane at it
 
-Three keys, in two Contexts, and all three are needed. Each was checked on the
-sandbox: with any one missing, the screens stay empty or unavailable.
-
-The three keys live in the single `platform` Context, in `okdp-system`.
+Three keys, all of them needed, in the single `platform` Context in
+`okdp-system`. Each was checked on the sandbox: with any one missing, the
+screens stay empty or unavailable.
 
 **1. Open the routes.** The Identity API answers only when the provider is
 kubauth:
