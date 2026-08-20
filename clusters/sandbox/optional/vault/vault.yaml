@@ -10,7 +10,7 @@ spec:
     - ingress
   package:
     repository: quay.io/okdp/sandbox-dependencies/vault
-    tag: 0.29.1-p01
+    tag: 0.29.1-p02
     interval: 30m
     timeout: 10m
   parameters:

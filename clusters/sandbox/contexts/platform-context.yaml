@@ -72,23 +72,23 @@ spec:
           icon: pi-table
           category: Data-Catalog
         - name: superset
-          versions: ["6.0.0-p02"]
-          default: "6.0.0-p02"
+          versions: ["6.0.0-p03"]
+          default: "6.0.0-p03"
           description: Superset
           category: Dataviz
         - name: trino
-          versions: ["480.0.0-p19"]
-          default: "480.0.0-p19"
+          versions: ["480.0.0-p20"]
+          default: "480.0.0-p20"
           description: Trino
           category: Interactive-Query
         - name: polaris
-          versions: ["1.3.0-incubating-p02"]
-          default: "1.3.0-incubating-p02"
+          versions: ["1.3.0-incubating-p03"]
+          default: "1.3.0-incubating-p03"
           description: Apache Polaris Iceberg catalog
           category: Data-Catalog
         - name: jupyterhub
-          versions: ["4.3.3-p03"]
-          default: "4.3.3-p03"
+          versions: ["4.3.3-p04"]
+          default: "4.3.3-p04"
           description: JupyterHub
           category: Notebook
         - name: airflow

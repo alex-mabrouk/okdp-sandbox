@@ -7,7 +7,7 @@ spec:
   description: SeaweedFS object store (s3 Connection producer)
   package:
     repository: quay.io/okdp/sandbox-dependencies/seaweedfs
-    tag: 4.17.0-p07
+    tag: 4.17.0-p08
     interval: 30m
     timeout: 10m
   parameters:
