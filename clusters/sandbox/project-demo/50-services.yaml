@@ -206,7 +206,7 @@ spec:
       - name: lakehouse
         s3SecretRef: creds-examples-s3
         properties: |
-          spark.hadoop.fs.s3a.endpoint=https://storage-default-api.okdp.sandbox
+          spark.hadoop.fs.s3a.endpoint=https://storage-default-api.{{ .Context.ingress.suffix }}
           spark.hadoop.fs.s3a.impl=org.apache.hadoop.fs.s3a.S3AFileSystem
           spark.hadoop.fs.s3a.aws.credentials.provider=org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider
           spark.hadoop.fs.s3a.access.key=$(S3_ACCESS_KEY)
@@ -221,8 +221,8 @@ spec:
           spark.sql.catalog.silver=org.apache.iceberg.spark.SparkCatalog
           spark.sql.catalog.silver.type=rest
           spark.sql.catalog.silver.warehouse=silver
-          spark.sql.catalog.silver.uri=https://polaris-demo.okdp.sandbox/api/catalog
-          spark.sql.catalog.silver.oauth2-server-uri=https://keycloak.okdp.sandbox/realms/master/protocol/openid-connect/token
+          spark.sql.catalog.silver.uri=https://polaris-demo.{{ .Context.ingress.suffix }}/api/catalog
+          spark.sql.catalog.silver.oauth2-server-uri=https://keycloak.{{ .Context.ingress.suffix }}/realms/master/protocol/openid-connect/token
           spark.sql.catalog.silver.scope=profile
           spark.sql.catalog.silver.rest.auth.type=oauth2
           spark.sql.catalog.silver.token-refresh-enabled=true
@@ -234,8 +234,8 @@ spec:
           spark.sql.catalog.gold=org.apache.iceberg.spark.SparkCatalog
           spark.sql.catalog.gold.type=rest
           spark.sql.catalog.gold.warehouse=gold
-          spark.sql.catalog.gold.uri=https://polaris-demo.okdp.sandbox/api/catalog
-          spark.sql.catalog.gold.oauth2-server-uri=https://keycloak.okdp.sandbox/realms/master/protocol/openid-connect/token
+          spark.sql.catalog.gold.uri=https://polaris-demo.{{ .Context.ingress.suffix }}/api/catalog
+          spark.sql.catalog.gold.oauth2-server-uri=https://keycloak.{{ .Context.ingress.suffix }}/realms/master/protocol/openid-connect/token
           spark.sql.catalog.gold.scope=profile
           spark.sql.catalog.gold.rest.auth.type=oauth2
           spark.sql.catalog.gold.token-refresh-enabled=true
@@ -273,7 +273,7 @@ spec:
               "\n",
               "> Tip: If you already cloned it before, this will **pull the latest changes**.\n",
               "\n",
-              "[✅ Sync OKDP Examples](https://jupyterhub-demo.okdp.sandbox/hub/user-redirect/git-pull?repo=https://github.com/okdp/okdp-examples&branch=fix/parameterize-deployment-targets&urlpath=lab/tree/okdp-examples/notebooks/index.ipynb)\n",
+              "[✅ Sync OKDP Examples](https://jupyterhub-demo.{{ .Context.ingress.suffix }}/hub/user-redirect/git-pull?repo=https://github.com/okdp/okdp-examples&branch=fix/parameterize-deployment-targets&urlpath=lab/tree/okdp-examples/notebooks/index.ipynb)\n",
               "\n",
               "---\n",
               "\n",

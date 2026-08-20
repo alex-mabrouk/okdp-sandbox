@@ -28,5 +28,5 @@ spec:
     tag: 0.8.0-p01
     timeout: 10m
   parameters:
-    oidcAuthority: https://keycloak.okdp.sandbox/realms/master
+    oidcAuthority: https://keycloak.{{ .Context.ingress.suffix }}/realms/master
   targetNamespace: okdp-system

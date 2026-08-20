@@ -7,7 +7,7 @@ spec:
   description: Keycloak identity provider (oidc Connection producer)
   package:
     repository: quay.io/okdp/sandbox-dependencies/keycloak
-    tag: 24.4.11-p12
+    tag: 24.4.11-p14
     interval: 30m
     timeout: 10m
   parameters:
@@ -88,17 +88,17 @@ spec:
         name: okdp-server
         publicClient: true
         redirectUris:
-          - "https://okdp-server.okdp.sandbox/swagger/oauth2-redirect.html"
+          - "https://okdp-server.{{ .Context.ingress.suffix }}/swagger/oauth2-redirect.html"
         webOrigins:
-          - "https://okdp-server.okdp.sandbox"
+          - "https://okdp-server.{{ .Context.ingress.suffix }}"
       - clientId: okdp-ui
         name: okdp-ui
         publicClient: true
         redirectUris:
-          - "https://okdp-ui.okdp.sandbox"
-          - "https://okdp-ui.okdp.sandbox/*"
+          - "https://okdp-ui.{{ .Context.ingress.suffix }}"
+          - "https://okdp-ui.{{ .Context.ingress.suffix }}/*"
         webOrigins:
-          - "https://okdp-ui.okdp.sandbox"
+          - "https://okdp-ui.{{ .Context.ingress.suffix }}"
         # groups is not a Keycloak built-in default: without it the token
         # exchange fails with "Invalid scopes".
         defaultClientScopes:
