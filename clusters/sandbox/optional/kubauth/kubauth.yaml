@@ -9,7 +9,7 @@ spec:
     - ingress
     - certManager
   package:
-    repository: quay.io/kubotal/sandbox-dependencies/kubauth
+    repository: quay.io/okdp/sandbox-dependencies/kubauth
     tag: 0.3.0-snapshot-p01
     interval: 30m
     timeout: 10m

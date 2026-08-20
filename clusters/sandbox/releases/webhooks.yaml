@@ -23,7 +23,7 @@ metadata:
 spec:
   description: Second stage of kubocd installation
   package:
-    repository: quay.io/kubotal/sandbox-dependencies/kubocd-webhooks
+    repository: quay.io/okdp/sandbox-dependencies/kubocd-webhooks
     # Follows the controller: the package wraps the matching kubocd-wh chart.
     tag: v0.3.2-p01
     interval: 30m

@@ -22,7 +22,7 @@ metadata:
 spec:
   description: "Certificate management for Kubernetes with trust-manager and issuers"
   package:
-    repository: quay.io/kubotal/sandbox-dependencies/cert-manager
+    repository: quay.io/okdp/sandbox-dependencies/cert-manager
     tag: 1.17.1-p08
     interval: 30m
     timeout: 10m

@@ -22,7 +22,7 @@ metadata:
 spec:
   description: "CoreDNS configuration patch for local domain resolution"
   package:
-    repository: quay.io/kubotal/sandbox-dependencies/coredns-patch
+    repository: quay.io/okdp/sandbox-dependencies/coredns-patch
     tag: 1.0.0-p05
     interval: 30m
     timeout: 10m

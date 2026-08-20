@@ -9,7 +9,7 @@ spec:
   dependencies:
     - ingress
   package:
-    repository: quay.io/kubotal/sandbox-dependencies/vault
+    repository: quay.io/okdp/sandbox-dependencies/vault
     tag: 0.29.1-p01
     interval: 30m
     timeout: 10m

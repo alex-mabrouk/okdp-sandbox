@@ -61,7 +61,7 @@ spec:
       workspace: standard
 
     serviceCatalog:
-      defaultRepository: quay.io/kubotal/platform-packages
+      defaultRepository: quay.io/okdp/platform-packages
       # Written by the console too: a re-apply resets the catalog to this seed.
       # Pre-Contract tags are not listed, the console no longer reads their marker.
       services:

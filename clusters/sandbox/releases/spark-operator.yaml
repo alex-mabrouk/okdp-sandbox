@@ -6,7 +6,7 @@ metadata:
 spec:
   description: "Spark Operator for managing Apache Spark applications on Kubernetes"
   package:
-    repository: quay.io/kubotal/platform-packages/spark-operator
+    repository: quay.io/okdp/platform-packages/spark-operator
     tag: 2.4.0-p04
   parameters:
     jobNamespaces: [""] # Allow all namespaces for sandbox simplicity

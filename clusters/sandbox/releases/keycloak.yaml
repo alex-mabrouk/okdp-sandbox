@@ -6,7 +6,7 @@ metadata:
 spec:
   description: Keycloak identity provider (oidc Connection producer)
   package:
-    repository: quay.io/kubotal/sandbox-dependencies/keycloak
+    repository: quay.io/okdp/sandbox-dependencies/keycloak
     tag: 24.4.11-p12
     interval: 30m
     timeout: 10m
