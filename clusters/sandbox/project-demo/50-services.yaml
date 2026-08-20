@@ -37,7 +37,7 @@ spec:
   description: Polaris Iceberg catalog of the demo project
   package:
     repository: quay.io/okdp/platform-packages/polaris
-    tag: 1.3.0-incubating-p03
+    tag: 1.3.0-incubating-p05
     interval: 30m
     timeout: 10m
   parameters:
