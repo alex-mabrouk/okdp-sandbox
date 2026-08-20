@@ -281,8 +281,14 @@ kubectl -n kubocd wait --for=condition=Available deploy/kubocd-ctrl-controller -
 ```sh
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 kubectl patch deployment metrics-server -n kube-system --type=json \
-  -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"}]'
+  -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"},
+       {"op": "replace", "path": "/spec/template/spec/containers/0/livenessProbe/timeoutSeconds", "value": 3},
+       {"op": "replace", "path": "/spec/template/spec/containers/0/readinessProbe/timeoutSeconds", "value": 3}]'
 ```
+
+> The default probe timeout of 1s is too tight for a single-node kind cluster: under
+> load the probes fail and the pod is restarted with a new IP, which the API server
+> keeps NATing to the old one.
 
 ##### Wait for metrics-server to be ready:
 
