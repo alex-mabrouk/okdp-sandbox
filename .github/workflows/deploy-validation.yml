@@ -91,10 +91,14 @@ jobs:
             -n flux-system --timeout=600s
           kubectl -n kubocd get pods
 
-      - name: Apply the platform contexts 🚀
+      - name: Apply the connection contracts 🚀
         run: |
-          # Order is immaterial: precedence is resolved by defaultContexts in
-          # kubocd.yaml. The NN- filename prefixes only order this glob apply.
+          # Contracts come first: a Connection names one through a required
+          # field, and the contract validates the values it carries.
+          kubectl apply -f clusters/sandbox/contracts/
+
+      - name: Apply the platform context 🚀
+        run: |
           kubectl apply -f clusters/sandbox/contexts/
 
       - name: Apply the platform releases 🚀
