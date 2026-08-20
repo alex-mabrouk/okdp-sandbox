@@ -81,26 +81,30 @@ spec:
     interval: 30m
     timeout: 10m
   parameters:
-    metastore: kcd-demo-hive-metastore
-    storage: demo-storage
     s3SecretRef: creds-trino-s3
     # The medallion layout of okdp-examples: bronze is the hive catalog,
     # silver and gold are Polaris warehouses provisioned by the examples layer.
-    hiveCatalog: bronze
+    hiveCatalogs:
+      - name: bronze
+        metastore: kcd-demo-hive-metastore
+        storage: demo-storage
     icebergCatalogs:
       # Polaris credentials of the root principal. A dedicated principal would
       # be better, but polaris-admin cannot set the Polaris credentials of the
       # principals it creates: only root is usable today.
       - name: iceberg
         catalog: kcd-demo-polaris-catalog
+        storage: demo-storage
         warehouse: demo
         oidcSecretRef: creds-polaris-root-okdp-sandbox
       - name: silver
         catalog: kcd-demo-polaris-catalog
+        storage: demo-storage
         warehouse: silver
         oidcSecretRef: creds-polaris-root-okdp-sandbox
       - name: gold
         catalog: kcd-demo-polaris-catalog
+        storage: demo-storage
         warehouse: gold
         oidcSecretRef: creds-polaris-root-okdp-sandbox
     # Fine-grained authorization is its own subject: the reference OPA policy
