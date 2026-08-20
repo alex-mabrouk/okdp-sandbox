@@ -23,7 +23,7 @@ sign-in. Running both providers side by side means users exist in two places.
 
 ```sh
 kubectl apply -f clusters/sandbox/optional/kubauth/kubauth.yaml
-kubectl -n kubocd-system wait --for=condition=Ready release/kubauth --timeout=10m
+kubectl -n kubocd-system wait --for=jsonpath='{.status.phase}'=READY release/kubauth --timeout=10m
 ```
 
 Then create the first administrator, since kubauth ships with no bootstrap
@@ -41,35 +41,33 @@ in `admin.yaml` before doing anything you would regret.
 Three keys, in two Contexts, and all three are needed. Each was checked on the
 sandbox: with any one missing, the screens stay empty or unavailable.
 
-**1. Open the routes.** The server reads the provider from its own Context, the
-one it is handed through `contextName`, not from the platform one:
+The three keys live in the single `platform` Context, in `okdp-system`.
+
+**1. Open the routes.** The Identity API answers only when the provider is
+kubauth:
 
 ```sh
-kubectl -n kubocd-system patch context okdp-control-plane --type=merge \
+kubectl -n okdp-system patch context platform --type=merge \
   -p '{"spec":{"context":{"identity":{"provider":"kubauth"}}}}'
 ```
 
-**2. Say where the users live**, in the platform Context this time, because the
-packages read the same key to place their OIDC clients:
+**2. Say where the users live:**
 
 ```sh
-kubectl -n kubocd-system patch context platform --type=merge \
-  -p '{"spec":{"context":{"platform":{"identity":{"kubauthNamespace":"kubauth-users"}}}}}'
+kubectl -n okdp-system patch context platform --type=merge \
+  -p '{"spec":{"context":{"identity":{"kubauth":{"namespace":"kubauth-users"}}}}}'
 ```
 
-**3. Hand the OIDC clients over to kubauth.** This one is not optional, and it is
-where the trap is:
+**3. Hand the OIDC clients over to kubauth**, which is what makes the packages
+generate their clients instead of reading a Secret name:
 
 ```sh
-kubectl -n kubocd-system patch context platform --type=merge \
-  -p '{"spec":{"context":{"platform":{"identity":{"clientProvisioning":"kubauth"}}}}}'
+kubectl -n okdp-system patch context platform --type=merge \
+  -p '{"spec":{"context":{"identity":{"provisioning":{"provider":"kubauth"}}}}}'
 ```
 
-`clientProvisioning` reads as "who creates the OIDC clients", and it does decide
-that. But the server also refuses to resolve the users namespace unless it is set
-to `kubauth`, and falls back to `okdp-system`, where no user lives. Skip this
-step and `/api/v1/identity/users` answers `200` with an empty list, which looks
-like a platform with no users rather than a misconfiguration.
+The server refuses to start when this says kubauth and the kubauth CRDs are
+absent, so install the component first.
 
 **This third step switches the platform over.** Every package that was handed a
 Secret name now generates its own client through kubauth, so the Releases
@@ -92,12 +90,8 @@ reload it once for the Identity area to appear.
 ```sh
 kubectl delete -f clusters/sandbox/optional/kubauth/admin.yaml
 kubectl delete -f clusters/sandbox/optional/kubauth/kubauth.yaml
-kubectl -n kubocd-system patch context okdp-control-plane --type=json \
-  -p '[{"op":"remove","path":"/spec/context/identity"}]'
-kubectl -n kubocd-system patch context platform --type=merge \
-  -p '{"spec":{"context":{"platform":{"identity":{"clientProvisioning":"existing"}}}}}'
-kubectl -n kubocd-system patch context platform --type=json \
-  -p '[{"op":"remove","path":"/spec/context/platform/identity/kubauthNamespace"}]'
+kubectl -n okdp-system patch context platform --type=merge \
+  -p '{"spec":{"context":{"identity":null}}}'
 ```
 
 ## storage
@@ -112,7 +106,7 @@ without it their Releases wait in `WAIT_DEPENDENCIES` with an explicit message.
 
 ```sh
 kubectl apply -f clusters/sandbox/optional/storage/storage.yaml
-kubectl -n kubocd-system wait --for=condition=Ready release/storage --timeout=10m
+kubectl -n kubocd-system wait --for=jsonpath='{.status.phase}'=READY release/storage --timeout=10m
 ```
 
 ### Bring your own S3 instead
@@ -147,7 +141,7 @@ only need the External Secrets CRDs, which the platform install carries.
 
 ```sh
 kubectl apply -f clusters/sandbox/optional/vault/vault.yaml
-kubectl -n kubocd-system wait --for=condition=Ready release/vault --timeout=10m
+kubectl -n kubocd-system wait --for=jsonpath='{.status.phase}'=READY release/vault --timeout=10m
 ```
 
 ### Remove
