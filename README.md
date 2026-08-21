@@ -13,7 +13,7 @@ It provides a ready-to-use data platform environment covering identity, object s
 The default OKDP sandbox deploys a complete local data-platform environment with:
 
 - Keycloak for identity and access management
-- SeaweedFS for object storage
+- SeaweedFS (or an alternative S3-compatible backend, e.g. RustFS) for object storage
 - Spark Operator and Spark History Server for Spark workloads and monitoring
 - Apache Airflow for workflow orchestration
 - JupyterHub for interactive data-science workspaces
@@ -375,7 +375,7 @@ kubectl get secret default-issuer -n cert-manager -o jsonpath='{.data.ca\.crt}' 
 
 **Option 2**: Ignore certificate warnings
 - **First, connect to Keycloak** (https://keycloak.okdp.sandbox or https://keycloak.<CUSTOM_DOMAIN>) and accept the self-signed certificate in your browser.
-- This step is **mandatory** for all OKDP services (UI, Seaweedfs, etc.) to communicate properly with Keycloak.
+- This step is **mandatory** for all OKDP services (UI, object storage, etc.) to communicate properly with Keycloak.
 
 ## Quick Start Guide
 

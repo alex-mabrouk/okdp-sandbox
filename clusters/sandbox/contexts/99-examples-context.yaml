@@ -418,7 +418,7 @@ spec:
                 "\n",
                 "You’ll be able to explore:\n",
                 "\n",
-                "- **[SeaweedFS](https://github.com/seaweedfs/seaweedfs)** for S3-compatible object storage\n",
+                "- **S3-compatible object storage** for the lakehouse data\n",
                 "- **[Hive Metastore](https://hive.apache.org/)** for table/catalog metadata\n",
                 "- **[Trino](https://trino.io/)** for interactive SQL queries\n",
                 "- **[Jupyter](https://jupyter.org/)** for notebooks and analysis\n",
@@ -438,7 +438,7 @@ spec:
                 "\n",
                 "## 🧭 What’s inside the repo\n",
                 "\n",
-                "- **Helm-driven workflows** to download public datasets and upload them to S3 (SeaweedFS)\n",
+                "- **Helm-driven workflows** to download public datasets and upload them to S3\n",
                 "- **Trino SQL** examples to create external tables and sync partitions\n",
                 "- **Jupyter notebooks** to query Trino (SQLAlchemy + native SQL)\n",
                 "- Optional **Superset** workflows for visualization\n",
@@ -717,64 +717,69 @@ spec:
                   - service_admin
                   - catalog_admin
 
-    # -- Sandbox-specific storage provider implementation settings for SeaweedFS databases, S3 credentials, STS, and identities.
+    # -- Backend-agnostic object storage provisioning: buckets to create and per-consumer
+    # grants, expressed against the neutral defaultStorage contract so any
+    # backend package (RustFS, SeaweedFS, ...) can provision them the same way. Each
+    # grant's credentialsSecret is the consumer's own pre-existing S3 secret (e.g.
+    # creds-trino-s3): the storage backend registers those same access/secret key values
+    # as a valid identity, it does not mint new credentials.
     defaultStorage:
-      # Sandbox implementation-specific
-      # Consider this part already provided by your platform
-      # settings: {}
-      settings:
-        filer:
-          database:
-            provider: defaultDatabaseServer
-            name: seaweedfs
-            credentialsSecret:
-              name: creds-seaweedfs-db
-              usernameKey: username
-              passwordKey: password
-        s3:
-          enabled: true
-          s3_secret: creds-seaweedfs-identities
-          bucketAnonymousRead: true
+      buckets:
+        - name: bronze
+          anonymousRead: true
+        - name: silver
+          anonymousRead: true
+        - name: gold
+          anonymousRead: true
+        - name: hive
+        - name: spark-events
+          # Spark's FsHistoryProvider fails to even start if its configured log directory
+          # doesn't already exist — S3 has no real directories, so this must be pre-seeded.
+          paths: [ event-logs ]
+      grants:
+        - principal: hiveMetastore
+          actions: [ read, write, list ]
+          buckets: [ hive ]
           credentialsSecret:
-            name: creds-seaweedfs-s3
+            name: creds-hive-metastore-s3
             accessKeyKey: accessKey
             secretKeyKey: secretKey
-
-          sts:
-            enabled: true
-            roleArn: arn:aws:iam::000000000000:role/S3WriteRole
-
-          advanced:
-            identities:
-              hiveMetastore:
-                identity: hiveMetastore
-                actions: [ Read, Write, List ]
-              trino:
-                identity: trino
-                actions: [ Read, Write, List, Admin ]
-              jupyterHub:
-                identity: jupyterHub
-                actions: [ Read, Write, List ]
-              sparkHistory:
-                identity: sparkHistory
-                actions: [ Read, Write, List ]
-              # SeaweedFS matches the accessKey above in the SigV4 request to the configured S3 credentials
-              # under this identity. The identity name can be anything and has importance for debugging issues
-              # SeaweedFS expects an admin identity to authorize it for sts:AssumeRole.
-              # response: code=AccessDenied, type=Sender, message=user
-              # polaris is not authorized to assume role arn:aws:iam::000000000000:role/S3WriteRole
-              polaris:
-                identity: polaris
-                actions: [ Read, Write, List, Admin ]
-              airflow:
-                identity: airflow
-                actions: [ Read, Write, List, Admin ]
-              examples:
-                identity: examples
-                actions: [ Admin, Read, Write, List ]
-              seaweedfs:
-                identity: seaweedfs
-                actions: [ Admin ]
+        - principal: trino
+          actions: [ read, write, list, admin ]
+          credentialsSecret:
+            name: creds-trino-s3
+            accessKeyKey: S3_ACCESS_KEY
+            secretKeyKey: S3_SECRET_ACCESS
+        - principal: jupyterHub
+          actions: [ read, write, list ]
+          buckets: [ bronze, silver, gold ]
+          credentialsSecret:
+            name: creds-jupyterhub-s3
+            accessKeyKey: S3_ACCESS_KEY
+            secretKeyKey: S3_SECRET_KEY
+        - principal: sparkHistory
+          actions: [ read, write, list ]
+          buckets: [ spark-events ]
+          credentialsSecret:
+            name: creds-spark-history-s3
+            accessKeyKey: accessKey
+            secretKeyKey: secretKey
+        # Polaris assumes a role to vend temporary S3 credentials for Iceberg tables
+        # (STS), hence sts: true instead of a bucket-scoped action list.
+        - principal: polaris
+          sts: true
+          credentialsSecret:
+            name: creds-polaris-s3
+            accessKeyKey: accessKey
+            secretKeyKey: secretKey
+        # Shared by the "examples" data-loading workflows and the JupyterHub lakehouse
+        # PySpark connection, which both reference this same secret.
+        - principal: examples
+          actions: [ read, write, list, admin ]
+          credentialsSecret:
+            name: creds-examples-s3
+            accessKeyKey: S3_ACCESS_KEY
+            secretKeyKey: S3_SECRET_KEY
 
     # -- Sandbox-specific identity provider settings for Keycloak users, roles, clients, service accounts, and OIDC scopes.
     defaultIdp:
@@ -888,9 +893,6 @@ spec:
               - "https://polaris-console-*"
             webOrigins:
               - "*"
-          - clientId: seaweedfs-s3
-            name: seaweedfs-s3
-            publicClient: true
           - clientId: superset
             name: superset
             secret: mySupersetSecret
@@ -1152,10 +1154,6 @@ spec:
             owner:
               username: "keycloak"
               passwordSecret: creds-keycloak-db
-          - name: seaweedfs
-            owner:
-              username: "seaweedfs"
-              passwordSecret: creds-seaweedfs-db
           - name: polaris
             owner:
               username: "polaris"
