@@ -172,12 +172,11 @@ spec:
       business_analyst: [Viewer]
       data_steward: [Viewer]
       auditor: [Viewer]
-    # The DAGs of okdp-examples, from the fork branch carrying the
-    # parameterization fixes until the upstream PR lands.
+    # The DAGs of okdp-examples.
     dagsGitSync:
       enabled: true
       repo: https://github.com/okdp/okdp-examples.git
-      branch: fix/parameterize-deployment-targets
+      branch: main
       ref: HEAD
       depth: 1
       subPath: airflow/dags
