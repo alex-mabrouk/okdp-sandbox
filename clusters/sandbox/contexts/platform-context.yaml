@@ -31,6 +31,7 @@ spec:
   context:
     ingress:
       suffix: okdp.sandbox
+      className: nginx
 
     # The 5 URLs are maintained by hand (changing the realm or the suffix means changing all five).
     # In existing mode, the default client Secret name follows the creds-<release>-oauth2 convention.
