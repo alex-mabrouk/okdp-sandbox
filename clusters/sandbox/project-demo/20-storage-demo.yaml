@@ -30,8 +30,6 @@ spec:
       - { name: bronze, anonymousRead: true }
       - { name: silver, anonymousRead: true }
       - { name: gold, anonymousRead: true }
-      # orders_etl_daily writes its raw and parquet orders under this bucket.
-      - { name: airflow-logs }
     grants:
       # The store admin identity, consumed by project-layer s3 Connections.
       # The principal cannot be named seaweedfs: the package already declares an
@@ -40,18 +38,23 @@ spec:
       - principal: platformAdmin
         credentialsSecret: { name: creds-seaweedfs-s3, accessKeyKey: accessKey, secretKeyKey: secretKey }
         actions: [Admin]
+      # bronze holds the external table locations the metastore validates and
+      # lists, hive its own warehouse.
       - principal: hiveMetastore
         credentialsSecret: { name: creds-hive-metastore-s3, accessKeyKey: accessKey, secretKeyKey: secretKey }
         actions: [Read, Write, List]
+        buckets: [hive, bronze]
       - principal: trino
         credentialsSecret: { name: creds-trino-s3, accessKeyKey: accessKey, secretKeyKey: secretKey }
         actions: [Read, Write, List, Admin]
       - principal: jupyterHub
         credentialsSecret: { name: creds-jupyterhub-s3, accessKeyKey: accessKey, secretKeyKey: secretKey }
         actions: [Read, Write, List]
+        buckets: [bronze, silver, gold]
       - principal: sparkHistory
         credentialsSecret: { name: creds-spark-history-s3, accessKeyKey: accessKey, secretKeyKey: secretKey }
         actions: [Read, Write, List]
+        buckets: [spark-events]
       - principal: polaris
         credentialsSecret: { name: creds-polaris-s3, accessKeyKey: accessKey, secretKeyKey: secretKey }
         actions: [Read, Write, List, Admin]
@@ -59,9 +62,6 @@ spec:
       - principal: examples
         credentialsSecret: { name: creds-examples-s3, accessKeyKey: accessKey, secretKeyKey: secretKey }
         actions: [Admin, Read, Write, List]
-      - principal: airflow
-        credentialsSecret: { name: creds-airflow-s3, accessKeyKey: accessKey, secretKeyKey: secretKey }
-        actions: [Read, Write, List]
   targetNamespace: default
   createNamespace: true
 
