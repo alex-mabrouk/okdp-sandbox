@@ -177,7 +177,7 @@ spec:
       enabled: true
       repo: https://github.com/okdp/okdp-examples.git
       branch: main
-      ref: HEAD
+      ref: main
       depth: 1
       subPath: airflow/dags
       period: 60s
@@ -196,7 +196,7 @@ spec:
   description: JupyterHub of the demo project
   package:
     repository: quay.io/okdp/platform-packages/jupyterhub
-    tag: 4.3.3-p05
+    tag: 4.3.3-p06
     interval: 30m
     timeout: 10m
   parameters:
@@ -338,7 +338,7 @@ spec:
   description: Spark History Server of the demo project
   package:
     repository: quay.io/okdp/platform-packages/spark-history-server
-    tag: 3.5.1-p05
+    tag: 3.5.1-p07
     interval: 30m
     timeout: 10m
   parameters:

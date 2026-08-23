@@ -83,7 +83,7 @@ spec:
         - title: Notebooks
           icon: pi-book
           services:
-            - { name: jupyterhub, versions: ["4.3.3-p05"], default: "4.3.3-p05", description: JupyterHub }
+            - { name: jupyterhub, versions: ["4.3.3-p06"], default: "4.3.3-p06", description: JupyterHub }
         - title: Data Engineering
           icon: pi-cog
           services:
@@ -91,4 +91,4 @@ spec:
         - title: Spark
           icon: pi-bolt
           services:
-            - { name: spark-history-server, versions: ["3.5.1-p06"], default: "3.5.1-p06", description: Spark History Server }
+            - { name: spark-history-server, versions: ["3.5.1-p07"], default: "3.5.1-p07", description: Spark History Server }
