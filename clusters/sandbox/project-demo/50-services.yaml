@@ -135,9 +135,9 @@ spec:
     # Without a mapping every user lands in Public and Superset refuses all.
     oidcRoleMapping:
       platform_admin: [Admin]
-      data_engineer: [Alpha]
-      data_scientist: [Alpha]
-      business_analyst: [Gamma, sql_lab]
+      data_engineer: [Alpha, sql_lab]
+      data_scientist: [Alpha, sql_lab]
+      business_analyst: [Gamma]
       data_steward: [Gamma, sql_lab]
       auditor: [Gamma]
     datasources:
