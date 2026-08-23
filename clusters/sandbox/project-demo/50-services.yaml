@@ -276,7 +276,7 @@ spec:
               "\n",
               "> Tip: If you already cloned it before, this will **pull the latest changes**.\n",
               "\n",
-              "[✅ Sync OKDP Examples](https://jupyterhub-demo.{{ .Context.ingress.suffix }}/hub/user-redirect/git-pull?repo=https://github.com/okdp/okdp-examples&branch=fix/parameterize-deployment-targets&urlpath=lab/tree/okdp-examples/notebooks/index.ipynb)\n",
+              "[✅ Sync OKDP Examples](https://jupyterhub-demo.{{ .Context.ingress.suffix }}/hub/user-redirect/git-pull?repo=https://github.com/okdp/okdp-examples&branch=main&urlpath=lab/tree/okdp-examples/notebooks/index.ipynb)\n",
               "\n",
               "---\n",
               "\n",
