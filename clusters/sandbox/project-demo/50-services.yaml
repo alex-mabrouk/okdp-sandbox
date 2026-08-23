@@ -235,6 +235,9 @@ spec:
           spark.sql.catalog.silver.token-refresh-enabled=true
           spark.sql.catalog.silver.header.X-Iceberg-Access-Delegation=vended-credentials
           spark.sql.catalog.silver.io-impl=org.apache.iceberg.io.ResolvingFileIO
+          spark.sql.catalog.silver.header.Polaris-Realm=sandbox
+          spark.sql.catalog.silver.client.region=us-east-1
+          spark.sql.catalog.silver.s3.region=us-east-1
       - name: gold
         properties: |
           spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
@@ -248,6 +251,9 @@ spec:
           spark.sql.catalog.gold.token-refresh-enabled=true
           spark.sql.catalog.gold.header.X-Iceberg-Access-Delegation=vended-credentials
           spark.sql.catalog.gold.io-impl=org.apache.iceberg.io.ResolvingFileIO
+          spark.sql.catalog.gold.header.Polaris-Realm=sandbox
+          spark.sql.catalog.gold.client.region=us-east-1
+          spark.sql.catalog.gold.s3.region=us-east-1
     # Without allowed_groups the hub answers 403 to everyone.
     oidcRoleMapping:
       allowed_groups: [platform_admin, data_engineer, data_scientist, business_analyst, data_steward]
