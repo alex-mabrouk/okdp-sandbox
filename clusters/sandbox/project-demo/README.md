@@ -32,7 +32,7 @@ kubectl -n demo wait --for=jsonpath='{.status.phase}'=READY \
          connection/demo-db-hive connection/demo-db-superset connection/demo-db-superset-examples connection/demo-db-polaris connection/demo-db-airflow connection/demo-storage \
         --timeout=10m
 kubectl apply -f clusters/sandbox/project-demo/50-services.yaml
-kubectl -n demo wait --for=jsonpath='{.status.phase}'=READY release -l okdp.io/project=demo --timeout=10m
+kubectl -n demo wait --for=jsonpath='{.status.phase}'=READY release -l okdp.io/project=demo --timeout=30m
 kubectl apply -f clusters/sandbox/project-demo/60-polaris-catalog-job.yaml
 kubectl -n demo wait --for=condition=complete job/demo-polaris-catalog --timeout=10m
 ```
