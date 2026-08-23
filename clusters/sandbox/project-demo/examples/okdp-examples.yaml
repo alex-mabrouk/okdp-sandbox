@@ -147,6 +147,26 @@ spec:
             - name: catalog_admin
               catalogRoles: []
           principals:
+            - name: bob
+              principalRoles:
+                - data_engineer
+            - name: mark
+              principalRoles:
+                - data_scientist
+            - name: nina
+              principalRoles:
+                - business_analyst
+            - name: grace
+              principalRoles:
+                - data_steward
+            - name: alice
+              principalRoles:
+                - platform_admin
+                - service_admin
+                - catalog_admin
+            - name: eve
+              principalRoles:
+                - auditor
             - name: adm
               principalRoles:
                 - platform_admin
