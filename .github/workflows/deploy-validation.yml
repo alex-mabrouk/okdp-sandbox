@@ -99,7 +99,7 @@ jobs:
 
       - name: Apply the platform context 🚀
         run: |
-          kubectl apply -f clusters/sandbox/contexts/
+          kubectl apply --server-side -f clusters/sandbox/contexts/
 
       - name: Apply the platform releases 🚀
         run: |

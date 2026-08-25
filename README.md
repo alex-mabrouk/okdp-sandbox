@@ -366,7 +366,7 @@ kubectl top nodes
 
 ```sh
 kubectl apply -f clusters/sandbox/contracts/
-kubectl apply -f clusters/sandbox/contexts/
+kubectl apply --server-side -f clusters/sandbox/contexts/
 ```
 
 ##### Configure a custom ingress domain for OKDP Services (Optional)
