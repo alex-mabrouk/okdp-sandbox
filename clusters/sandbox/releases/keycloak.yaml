@@ -22,8 +22,9 @@ metadata:
 spec:
   description: Keycloak identity provider (oidc Connection producer)
   package:
-    repository: quay.io/okdp/sandbox-dependencies/keycloak
-    tag: 24.4.11-p14
+    # TEMPORARY: personal build carrying users[].groups, revert once merged upstream.
+    repository: ghcr.io/alex-mabrouk/okdp-dependencies/keycloak
+    tag: 24.4.11-p15
     interval: 30m
     timeout: 10m
   parameters:
@@ -43,18 +44,21 @@ spec:
         lastName: bob
         password: bob
         roles: [data_engineer]
+        groups: [storage_readwrite]
       - username: mark
         email: mark@okdp.io
         firstName: mark
         lastName: mark
         password: mark
         roles: [data_scientist]
+        groups: [storage_readonly]
       - username: nina
         email: nina@okdp.io
         firstName: nina
         lastName: nina
         password: nina
         roles: [business_analyst]
+        groups: [storage_readonly]
       - username: grace
         email: grace@okdp.io
         firstName: grace
@@ -67,6 +71,7 @@ spec:
         lastName: alice
         password: alice
         roles: [platform_admin, polaris_service_admin, polaris_catalog_admin]
+        groups: [storage_admin]
       - username: eve
         email: eve@okdp.io
         firstName: eve
@@ -79,6 +84,7 @@ spec:
         lastName: adm
         password: adm
         roles: [ platform_admin, polaris_service_admin, polaris_catalog_admin ]
+        groups: [storage_admin]
       - username: svc-spark-etl-polaris-writer
         serviceAccountClientId: svc-spark-etl-polaris-writer
         roles: [ data_engineer, data_scientist, business_analyst ]
@@ -89,6 +95,11 @@ spec:
       - username: svc-trino-polaris-writer
         serviceAccountClientId: svc-trino-polaris-writer
         roles: [ platform_admin, polaris_service_admin, polaris_catalog_admin ]
+    # Storage policy names, carried to the object store by group membership.
+    groups:
+      - name: storage_admin
+      - name: storage_readwrite
+      - name: storage_readonly
     roles:
       - name: data_engineer
       - name: data_scientist
@@ -150,6 +161,24 @@ spec:
       - clientId: seaweedfs-s3
         name: seaweedfs-s3
         publicClient: true
+      # RustFS console SSO: confidential client, exact callback path.
+      - clientId: rustfs
+        name: rustfs
+        secret: myRustfsSecret
+        publicClient: false
+        redirectUris:
+          - "https://rustfs-demo.okdp.sandbox/rustfs/admin/v3/oidc/callback/default"
+        webOrigins:
+          - "https://rustfs-demo.okdp.sandbox"
+        defaultClientScopes:
+          - web-origins
+          - acr
+          - roles
+          - profile
+          - storage-policies
+          - groups
+          - basic
+          - email
       - clientId: superset
         name: superset
         secret: mySupersetSecret
@@ -361,6 +390,23 @@ spec:
           - profile
           - email
     clientScopes:
+      - name: storage-policies
+        description: "Object store policy names, from group membership"
+        protocol: openid-connect
+        attributes:
+          include.in.token.scope: "false"
+          display.on.consent.screen: "false"
+        protocolMappers:
+          - name: storage_policies
+            protocol: openid-connect
+            protocolMapper: oidc-group-membership-mapper
+            config:
+              access.token.claim: "true"
+              claim.name: storage_policies
+              id.token.claim: "true"
+              introspection.token.claim: "true"
+              userinfo.token.claim: "true"
+              full.path: "false"
       - name: groups
         description: "Groups scope"
         protocol: openid-connect
