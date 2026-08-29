@@ -174,13 +174,16 @@ metadata:
 spec:
   description: Airflow of the demo project
   package:
-    repository: quay.io/okdp/platform-packages/airflow
-    tag: 3.2.1-p04
+    # TEMPORARY: personal build carrying the storage connection, revert once #70 is merged.
+    repository: ghcr.io/alex-mabrouk/platform-packages/airflow
+    tag: 3.2.1-p07
     interval: 30m
     timeout: 10m
   parameters:
     db: demo-db-airflow
     metadataSecret: creds-airflow-db
+    storage: demo-storage
+    s3SecretRef: creds-examples-s3
     oidcRoleMapping:
       platform_admin: [Admin]
       data_engineer: [Op]
