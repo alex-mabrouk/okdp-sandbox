@@ -171,6 +171,8 @@ spec:
     s3SecretRef: creds-examples-s3
     db: demo-db-airflow
     metadataSecret: creds-airflow-db
+    storage: demo-storage
+    s3SecretRef: creds-examples-s3
     oidcRoleMapping:
       platform_admin: [Admin]
       data_engineer: [Op]
