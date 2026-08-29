@@ -59,7 +59,7 @@ spec:
               done
               CODE=$(curl -s -o /tmp/out -w "%{http_code}" -X POST "$API/api/management/v1/catalogs" \
                 -H "Authorization: Bearer $T" -H "Content-Type: application/json" \
-                -d "{\"catalog\":{\"name\":\"demo\",\"type\":\"INTERNAL\",\"properties\":{\"default-base-location\":\"s3://lakehouse/demo\",\"s3.endpoint\":\"http://storage-s3.default.svc.cluster.local:8333\",\"s3.path-style-access\":\"true\",\"s3.access-key-id\":\"$AK\",\"s3.secret-access-key\":\"$SK\",\"s3.region\":\"us-east-1\"},\"storageConfigInfo\":{\"storageType\":\"S3\",\"allowedLocations\":[\"s3://lakehouse/demo\"],\"endpoint\":\"http://storage-s3.default.svc.cluster.local:8333\",\"pathStyleAccess\":true,\"region\":\"us-east-1\"}}}")
+                -d "{\"catalog\":{\"name\":\"demo\",\"type\":\"INTERNAL\",\"properties\":{\"default-base-location\":\"s3://lakehouse/demo\",\"s3.endpoint\":\"http://demo-rustfs-svc.demo.svc.cluster.local:9000\",\"s3.path-style-access\":\"true\",\"s3.access-key-id\":\"$AK\",\"s3.secret-access-key\":\"$SK\",\"s3.region\":\"us-east-1\"},\"storageConfigInfo\":{\"storageType\":\"S3\",\"allowedLocations\":[\"s3://lakehouse/demo\"],\"endpoint\":\"http://demo-rustfs-svc.demo.svc.cluster.local:9000\",\"pathStyleAccess\":true,\"region\":\"us-east-1\"}}}")
               cat /tmp/out; echo
               case "$CODE" in
                 201) echo "catalog demo created" ;;

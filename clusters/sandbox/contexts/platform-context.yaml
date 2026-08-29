@@ -72,6 +72,8 @@ spec:
           services:
             - { name: hive-metastore, versions: ["4.0.1-p02"], default: "4.0.1-p02", description: Hive metastore }
             - { name: polaris, versions: ["1.3.0-incubating-p06"], default: "1.3.0-incubating-p06", description: Apache Polaris Iceberg catalog }
+            # Published outside defaultRepository, hence the explicit repository.
+            - { name: rustfs, label: RustFS, versions: ["1.0.0-rc.3-p07"], default: "1.0.0-rc.3-p07", description: S3 object storage, repository: ghcr.io/alex-mabrouk/okdp-packages }
         - title: Interactive Query
           icon: pi-bolt
           services:
