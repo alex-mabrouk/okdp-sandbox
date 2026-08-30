@@ -52,7 +52,7 @@ This repository owns the **single-cluster sandbox deployment**. It describes how
 - `clusters/sandbox/contracts/` : the KuboCD `ClusterContract` files, applied before the contexts
 - `clusters/sandbox/optional/` : components the platform can run on but does not need, applied by hand only, see [its README](clusters/sandbox/optional/README.md)
 - `clusters/sandbox/project-demo/` : the demo project and its example workloads (layers 2 and 3), see [its README](clusters/sandbox/project-demo/README.md)
-- `docs/` : deployment guides (DNS, certificates)
+- `docs/` : deployment guides (DNS, certificates, optional GPU node)
 
 The **packages themselves** (the KuboCD packages bundled as OCI artifacts) live in dedicated repositories, split by ownership, OKDP core versus the third-party dependencies OKDP does not own and are consumed here from the registry. This repository never builds packages, it only deploys published ones.
 
