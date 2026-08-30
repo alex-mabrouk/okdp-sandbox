@@ -53,7 +53,7 @@ spec:
   description: Chat interface over the demo project models
   package:
     repository: ghcr.io/alex-mabrouk/okdp-packages/ollama-ui
-    tag: 14.8.0-p03
+    tag: 16.1.0-p01
     interval: 30m
     timeout: 15m
   parameters:
