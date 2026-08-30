@@ -179,6 +179,23 @@ spec:
           - groups
           - basic
           - email
+      # Open WebUI SSO: confidential client, exact callback path.
+      - clientId: ollama-ui
+        name: ollama-ui
+        secret: myOllamaUiSecret
+        publicClient: false
+        redirectUris:
+          - "https://ollama-ui-demo.okdp.sandbox/oauth/oidc/callback"
+        webOrigins:
+          - "https://ollama-ui-demo.okdp.sandbox"
+        defaultClientScopes:
+          - web-origins
+          - acr
+          - roles
+          - profile
+          - groups
+          - basic
+          - email
       - clientId: superset
         name: superset
         secret: mySupersetSecret
