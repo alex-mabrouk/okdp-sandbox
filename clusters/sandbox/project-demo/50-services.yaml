@@ -136,6 +136,8 @@ spec:
   parameters:
     metadataDb: demo-db-superset
     examplesDb: demo-db-superset-examples
+    # French number and date formats on the charts. The UI language is untouched.
+    locale: fr
     # Without a mapping every user lands in Public and Superset refuses all.
     oidcRoleMapping:
       platform_admin: [Admin]
@@ -181,11 +183,13 @@ spec:
       data_steward: [Viewer]
       auditor: [Viewer]
     # The DAGs of okdp-examples.
+    # TEMPORARY: personal fork carrying the france-establishments chain, revert to
+    # okdp/okdp-examples@main once the branch is merged.
     dagsGitSync:
       enabled: true
-      repo: https://github.com/okdp/okdp-examples.git
-      branch: main
-      ref: main
+      repo: https://github.com/alex-mabrouk/okdp-examples.git
+      branch: feat/france-establishments
+      ref: feat/france-establishments
       depth: 1
       subPath: airflow/dags
       period: 60s
