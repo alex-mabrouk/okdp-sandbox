@@ -19,33 +19,31 @@
 # concern. Only the package and its admin parameters differ. The two stores can
 # run side by side, on their own ingresses; what selects the one the project
 # uses is the demo-storage Connection of 40-connections.yaml.
+# The demo project's view of the optional storage component: same Release,
+# extended with the project buckets and one grant per consuming service.
+# Applying this file replaces the parameters of the storage Release from
+# clusters/sandbox/optional/storage/rustfs.yaml. Re-apply that file to
+# return to the platform-only store.
 apiVersion: kubocd.kubotal.io/v1alpha1
 kind: Release
 metadata:
-  name: demo-rustfs
-  namespace: demo
-  # The console lists an instance from these: project scope, catalog entry,
-  # displayed name.
-  labels:
-    okdp.io/project: demo
-    okdp.io/service: rustfs
-    okdp.io/instance-name: rustfs
+  name: storage
+  namespace: kubocd-system
 spec:
   description: RustFS object store (s3 Connection producer)
   package:
     repository: ghcr.io/alex-mabrouk/okdp-packages/rustfs
-    tag: 1.0.0-rc.3-p07
+    tag: 1.0.0-rc.3-p10
     interval: 30m
     timeout: 10m
   parameters:
-    # The package ships no default for the root secret key. Sandbox value,
-    # assumed as such: moving it into a Secret remains to be done.
     rootAccessKey: okdpadmin
     rootSecretKey: ss123456
     dataStorage: 5Gi
     # Console SSO: the Keycloak group values mapped onto store policies. A claim
     # value naming no policy makes RustFS refuse the login.
     oidcPolicyClaim: storage_policies
+    oidcPolicyScope: storage-policies
     oidcPolicies:
       - { name: storage_admin, actions: [admin] }
       - { name: storage_readwrite, actions: [read, write, list] }
@@ -59,12 +57,8 @@ spec:
       - { name: silver, anonymousRead: true }
       - { name: gold, anonymousRead: true }
     grants:
-      # The store admin identity, consumed by project-layer s3 Connections.
-      # The principal cannot be named seaweedfs: the package already declares an
-      # identity of that name for the root key, and SeaweedFS keeps a single
-      # identity per name, which made the root key the provisioning needs vanish.
       - principal: platformAdmin
-        credentialsSecret: { name: creds-seaweedfs-s3, accessKeyKey: accessKey, secretKeyKey: secretKey }
+        credentialsSecret: { name: creds-storage-s3, accessKeyKey: accessKey, secretKeyKey: secretKey }
         actions: [Admin]
       # bronze holds the external table locations the metastore validates and
       # lists, hive its own warehouse.
@@ -90,5 +84,5 @@ spec:
       - principal: examples
         credentialsSecret: { name: creds-examples-s3, accessKeyKey: accessKey, secretKeyKey: secretKey }
         actions: [Admin, Read, Write, List]
-  targetNamespace: demo
-  createNamespace: false
+  targetNamespace: default
+  createNamespace: true

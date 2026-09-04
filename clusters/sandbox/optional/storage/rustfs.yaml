@@ -1,0 +1,62 @@
+#
+# Copyright 2026 The OKDP Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+
+
+# RustFS in place of the SeaweedFS store of storage.yaml. Same shape: one Release
+# in kubocd-system, deployed to `default`, producing the `s3` Connection the
+# project services consume. The two cannot run under the same Release name.
+apiVersion: kubocd.kubotal.io/v1alpha1
+kind: Release
+metadata:
+  name: storage
+  namespace: kubocd-system
+spec:
+  description: RustFS object store (s3 Connection producer)
+  package:
+    repository: ghcr.io/alex-mabrouk/okdp-packages/rustfs
+    tag: 1.0.0-rc.3-p10
+    interval: 30m
+    timeout: 10m
+  parameters:
+    rootAccessKey: okdpadmin
+    rootSecretKey: ss123456
+    dataStorage: 5Gi
+    oidcPolicyClaim: storage_policies
+    oidcPolicyScope: storage-policies
+    oidcPolicies:
+      - { name: storage_admin, actions: [admin] }
+      - { name: storage_readwrite, actions: [read, write, list] }
+      - { name: storage_readonly, actions: [read, list] }
+    grants:
+      - principal: platformAdmin
+        credentialsSecret: { name: creds-storage-s3, accessKeyKey: accessKey, secretKeyKey: secretKey }
+        actions: [Admin]
+  targetNamespace: default
+  createNamespace: true
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: creds-storage-s3
+  namespace: default
+  annotations:
+    # Replicated so project namespaces can reference it from s3 Connections.
+    replicator.v1.mittwald.de/replicate-to: "*"
+type: Opaque
+stringData:
+  accessKey: "snu8yoP6QAlY0ne4"
+  secretKey: "PNzBcmeLNEdR0oviwm04NQAicOrDH1Km"

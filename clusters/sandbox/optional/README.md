@@ -119,6 +119,20 @@ kubectl apply -f clusters/sandbox/optional/storage/storage.yaml
 kubectl -n kubocd-system wait --for=jsonpath='{.status.phase}'=READY release/storage --timeout=10m
 ```
 
+`rustfs.yaml` is the same component served by RustFS, with Keycloak SSO on its
+console. Apply one or the other: both declare the Release `storage`.
+
+```sh
+kubectl apply -f clusters/sandbox/optional/storage/rustfs.yaml
+kubectl -n kubocd-system wait --for=jsonpath='{.status.phase}'=READY release/storage --timeout=10m
+kubectl -n default rollout restart deploy/storage
+```
+
+The restart is not optional: the provisioning Job writes the OIDC provider and
+the policies after the server has booted, and RustFS reads its IAM store at boot
+only. Without it the console refuses every login with `OIDC policy mapping did
+not resolve to current policies`.
+
 ### Bring your own S3 instead
 
 An external S3-compatible store replaces SeaweedFS entirely:

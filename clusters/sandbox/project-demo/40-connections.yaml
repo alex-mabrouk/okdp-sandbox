@@ -113,8 +113,8 @@ spec:
   contract: s3
   description: Platform S3 store, shared with this project
   values:
-    apiUrl: https://rustfs-demo-api.okdp.sandbox
-    internalUrl: http://demo-rustfs-svc.demo.svc.cluster.local:9000
+    apiUrl: https://storage-default-api.okdp.sandbox
+    internalUrl: http://storage-svc.default.svc.cluster.local:9000
     region: us-east-1
     pathStyle: true
-    secretRef: creds-seaweedfs-s3
+    secretRef: creds-storage-s3
