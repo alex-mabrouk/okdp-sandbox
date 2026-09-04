@@ -97,5 +97,5 @@ spec:
             - { name: spark-history-server, versions: ["3.5.1-p07"], default: "3.5.1-p07", description: Spark History Server }
         # Seeded empty on purpose: its services are added from the UI console.
         - title: AI
-          icon: pi-comments
+          icon: pi-microchip-ai
           services: []
