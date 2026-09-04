@@ -18,6 +18,7 @@ installed first.
 
 ```sh
 kubectl apply -f clusters/sandbox/project-demo/00-namespace.yaml
+kubectl apply -f clusters/sandbox/project-demo/05-project-context.yaml
 kubectl apply -f clusters/sandbox/project-demo/10-secrets.yaml
 kubectl -n demo wait --for=jsonpath='{.status.phase}'=READY release/demo-secrets --timeout=5m
 kubectl apply -f clusters/sandbox/project-demo/20-storage-demo.yaml
@@ -39,7 +40,13 @@ kubectl -n demo wait --for=condition=complete job/demo-polaris-catalog --timeout
 
 `20-storage-demo.yaml` extends the storage Release with the project buckets
 and one grant per service. Re-apply `optional/storage/storage.yaml` to return
-to the platform-only store.
+to the platform-only store. `20-storage-rustfs.yaml` is its RustFS counterpart,
+to be applied over `optional/storage/rustfs.yaml`.
+
+`05-project-context.yaml` is what makes the services of this namespace register
+their own OIDC client rather than read one prepared by hand. It is picked up
+through the Config's `defaultNamespaceContexts`, so it also covers the instances
+the Control Plane creates.
 
 The services follow the medallion layout of okdp-examples: `bronze` is the
 hive catalog of Trino, `silver` and `gold` are Polaris warehouses that exist

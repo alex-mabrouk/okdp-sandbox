@@ -46,6 +46,9 @@ spec:
       scope: "openid profile email groups"
       usePKCE: true
       insecureSkipVerify: false
+      # Platform services get a client declared once in the Keycloak Release.
+      # Project services register their own, through the per-project Context
+      # named 'project' (see project-demo/05-project-context.yaml).
       clientProvisioning: existing
 
     proxy:
@@ -94,3 +97,7 @@ spec:
           icon: pi-bolt
           services:
             - { name: spark-history-server, versions: ["3.5.1-p08"], default: "3.5.1-p08", description: Spark History Server }
+        # Seeded empty on purpose: its services are added from the UI console.
+        - title: AI
+          icon: pi-comments
+          services: []

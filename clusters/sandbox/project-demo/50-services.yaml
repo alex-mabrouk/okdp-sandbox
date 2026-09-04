@@ -162,6 +162,9 @@ metadata:
     okdp.io/service: airflow
     okdp.io/instance-name: airflow
 spec:
+  # TEMPORARY: see contexts/oidc-existing-context.yaml
+  contexts:
+    - { namespace: okdp-system, name: oidc-existing }
   description: Airflow of the demo project
   package:
     repository: quay.io/okdp/platform-packages/airflow

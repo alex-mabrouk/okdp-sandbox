@@ -66,6 +66,10 @@ spec:
         defaultContexts:
           - name: platform
             namespace: okdp-system
+        # Optional per-project overlay: a Context named 'project' in the Release
+        # namespace, applied after the platform one. Absent, nothing changes.
+        defaultNamespaceContexts:
+          - project
     controller:
       enabled: true
       replicaCount: 1
