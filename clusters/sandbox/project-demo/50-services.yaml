@@ -175,6 +175,9 @@ metadata:
     okdp.io/service: airflow
     okdp.io/instance-name: airflow
 spec:
+  # TEMPORARY: see contexts/oidc-existing-context.yaml
+  contexts:
+    - { namespace: okdp-system, name: oidc-existing }
   description: Airflow of the demo project
   package:
     # TEMPORARY: personal build carrying the storage connection, revert once #70 is merged.

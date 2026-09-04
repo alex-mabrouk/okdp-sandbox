@@ -33,6 +33,10 @@ spec:
     memoryGi: 2
     cpu: 0.5
     db: kcd-cnpg-postgresql-keycloak
+    # Lets a service register its own OIDC client at deploy time
+    anonymousDCR:
+      enabled: true
+      allowedScopes: [groups, storage-policies]
     realm:
       name: master
       displayName: "OKDP internal Realm"
@@ -161,15 +165,16 @@ spec:
       - clientId: seaweedfs-s3
         name: seaweedfs-s3
         publicClient: true
-      # RustFS console SSO: confidential client, exact callback path.
+      # RustFS console SSO: confidential client, exact callback path. The store is
+      # platform infrastructure, deployed as the Release 'storage' in 'default'.
       - clientId: rustfs
         name: rustfs
         secret: myRustfsSecret
         publicClient: false
         redirectUris:
-          - "https://rustfs-demo.okdp.sandbox/rustfs/admin/v3/oidc/callback/default"
+          - "https://storage-default.okdp.sandbox/rustfs/admin/v3/oidc/callback/default"
         webOrigins:
-          - "https://rustfs-demo.okdp.sandbox"
+          - "https://storage-default.okdp.sandbox"
         defaultClientScopes:
           - web-origins
           - acr
