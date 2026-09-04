@@ -40,19 +40,37 @@ docker run --rm --gpus all ubuntu:24.04 nvidia-smi -L   # must list the GPU
 
 ## 2. Cluster
 
-Add the mount below to the `kind create cluster` config. The path is not a real file: the
-NVIDIA runtime reads it as a request for every device **and** the driver userspace. Without
-it the node gets `/dev/nvidia*` but no libraries, and nothing works.
+The node claims the GPU through one extra mount. The path is not a real file: the NVIDIA
+runtime reads it as a request for every device **and** the driver userspace. Without it the
+node gets `/dev/nvidia*` but no libraries, and nothing works.
 
-```yaml
-nodes:
-  - role: control-plane
-    extraMounts:
-      - hostPath: /dev/null
-        containerPath: /var/run/nvidia-container-devices/all
-```
+The runtime reads that mount when it creates the node container, so an existing cluster
+cannot be converted: it has to be recreated, and the platform and project installs replayed
+on top (see the [README](../README.md)). Wire the GPU before installing anything.
 
 ```sh
+kind delete cluster --name okdp-sandbox
+
+cat > /tmp/okdp-sandbox-config.yaml <<EOF
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: okdp-sandbox
+nodes:
+- role: control-plane
+  extraPortMappings:
+  - containerPort: 30080
+    hostPort: 80
+  - containerPort: 30443
+    hostPort: 443
+  - containerPort: 30053
+    hostPort: 30053
+    protocol: UDP
+  extraMounts:
+  - hostPath: /dev/null
+    containerPath: /var/run/nvidia-container-devices/all
+EOF
+
+kind create cluster --config /tmp/okdp-sandbox-config.yaml
 docker exec okdp-sandbox-control-plane nvidia-smi -L   # must list the GPU
 ```
 
