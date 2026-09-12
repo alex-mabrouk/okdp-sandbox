@@ -191,8 +191,8 @@ spec:
     dagsGitSync:
       enabled: true
       repo: https://github.com/alex-mabrouk/okdp-examples.git
-      branch: feat/france-establishments
-      ref: feat/france-establishments
+      branch: feat/einvoicing
+      ref: feat/einvoicing
       depth: 1
       subPath: airflow/dags
       period: 60s
