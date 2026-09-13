@@ -45,7 +45,8 @@ spec:
       displayName: keycloak
       scope: "openid profile email groups"
       usePKCE: true
-      insecureSkipVerify: false
+      # Self-signed sandbox certificate the server pod does not carry a CA for.
+      insecureSkipVerify: true
       # Platform services get a client declared once in the Keycloak Release.
       # Project services register their own, through the per-project Context
       # named 'project' (see project-demo/05-project-context.yaml).
