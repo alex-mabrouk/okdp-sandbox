@@ -40,6 +40,7 @@ spec:
     rootAccessKey: okdpadmin
     rootSecretKey: ss123456
     dataStorage: 5Gi
+    mcImage: quay.io/minio/mc:latest
     # Console SSO: the Keycloak group values mapped onto store policies. A claim
     # value naming no policy makes RustFS refuse the login.
     oidcPolicyClaim: storage_policies

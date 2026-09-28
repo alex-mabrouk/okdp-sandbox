@@ -70,6 +70,21 @@ spec:
         # namespace, applied after the platform one. Absent, nothing changes.
         defaultNamespaceContexts:
           - project
+        # Read access to the private community-packages OCI packages
+        # (ghcr.io/alex-mabrouk/community-packages/community-packages/*).
+        # Not controller.extraEnv: kubocd-ctrl@0.3.2's deployment.yaml has a
+        # broken nindent on that block (misaligned by 6 spaces), so any
+        # non-empty extraEnv breaks the chart's own YAML.
+        packageRedirects:
+          - oldPrefix: ghcr.io/alex-mabrouk/community-packages
+            newPrefix: ghcr.io/alex-mabrouk/community-packages
+            secretRef:
+              name: kubocd-ghcr-dockercfg
+          # Same personal ghcr account, packages also private since first push.
+          - oldPrefix: ghcr.io/alex-mabrouk/okdp-packages
+            newPrefix: ghcr.io/alex-mabrouk/okdp-packages
+            secretRef:
+              name: kubocd-ghcr-dockercfg
     controller:
       enabled: true
       replicaCount: 1

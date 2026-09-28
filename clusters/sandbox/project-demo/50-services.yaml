@@ -167,8 +167,10 @@ spec:
     - { namespace: okdp-system, name: oidc-existing }
   description: Airflow of the demo project
   package:
-    repository: quay.io/okdp/platform-packages/airflow
-    tag: 3.2.1-p09
+    # Personal build: fixes the non-string client_kwargs key that broke OIDC login
+    # (authlib "keywords must be strings"). Revert to quay.io once fixed upstream.
+    repository: ghcr.io/alex-mabrouk/okdp-packages/airflow
+    tag: 3.2.1-p11
     interval: 30m
     timeout: 10m
   parameters:
@@ -176,8 +178,6 @@ spec:
     s3SecretRef: creds-examples-s3
     db: demo-db-airflow
     metadataSecret: creds-airflow-db
-    storage: demo-storage
-    s3SecretRef: creds-examples-s3
     oidcRoleMapping:
       platform_admin: [Admin]
       data_engineer: [Op]

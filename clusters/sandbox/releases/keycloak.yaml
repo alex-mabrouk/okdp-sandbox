@@ -127,8 +127,11 @@ spec:
         redirectUris:
           - "https://okdp-ui.{{ .Context.ingress.suffix }}"
           - "https://okdp-ui.{{ .Context.ingress.suffix }}/*"
+          - "http://127.0.0.1:4200"
+          - "http://127.0.0.1:4200/*"
         webOrigins:
           - "https://okdp-ui.{{ .Context.ingress.suffix }}"
+          - "http://127.0.0.1:4200"
         # groups is not a Keycloak built-in default: without it the token
         # exchange fails with "Invalid scopes".
         defaultClientScopes:

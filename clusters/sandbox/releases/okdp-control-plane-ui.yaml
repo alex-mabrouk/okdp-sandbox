@@ -24,9 +24,12 @@ spec:
   description: OKDP UI - Frontend web interface for the Open Kubernetes Data Platform
   package:
     interval: 30m
-    repository: quay.io/okdp/platform-packages/okdp-control-plane-ui
-    tag: 0.8.0-p01
+    # Personal build from fix/sse-bearer-token (PR #122), not merged yet.
+    repository: ghcr.io/alex-mabrouk/okdp-packages/okdp-control-plane-ui
+    tag: 0.9.0-p01
     timeout: 10m
   parameters:
     oidcAuthority: https://keycloak.{{ .Context.ingress.suffix }}/realms/master
+    imageRepository: ghcr.io/alex-mabrouk/okdp-control-plane-ui
+    imageTag: pr122-sse-bearer-token
   targetNamespace: okdp-system

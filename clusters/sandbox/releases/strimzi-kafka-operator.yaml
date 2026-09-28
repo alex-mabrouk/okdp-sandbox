@@ -17,18 +17,14 @@
 apiVersion: kubocd.kubotal.io/v1alpha1
 kind: Release
 metadata:
-  name: okdp-control-plane-server
+  name: strimzi-kafka-operator
   namespace: kubocd-system
 spec:
-  createNamespace: true
-  description: OKDP Server - API backend for the Open Kubernetes Data Platform
+  description: Strimzi Kafka Operator, provisions Kafka clusters for the kafka package
   package:
+    repository: ghcr.io/alex-mabrouk/okdp-packages/strimzi-kafka-operator
+    tag: 1.2.0-p01
     interval: 30m
-    # Personal build from feat/api-token-verification (PR #91), not merged yet.
-    repository: ghcr.io/alex-mabrouk/okdp-packages/okdp-control-plane-server
-    tag: 0.9.0-p01
     timeout: 10m
-  parameters:
-    imageRepository: ghcr.io/alex-mabrouk/okdp-control-plane-server
-    imageTag: pr91-audience-check
-  targetNamespace: okdp-system
+  targetNamespace: strimzi
+  createNamespace: true
