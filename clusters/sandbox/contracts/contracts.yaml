@@ -35,7 +35,20 @@ spec:
       secretRef:
         type: string
         required: true
-        description: "Secret with keys: username, password"
+        description: >-
+          Secret with keys: username, password, and uri for postgresql
+          (postgresql://<username>:<password>@<host>:<port>/<dbName>, user and
+          password percent-encoded, sslmode=<sslMode> when sslMode is set)
+      version:
+        type: string
+        description: Version of the server, as numbered by the engine (18, 11.4)
+      postgresql:
+        type: object
+        properties:
+          extensions:
+            type: array
+            items: { type: string }
+            description: Extensions created in the database
       # Transport options, set when the server is declared by hand and reached
       # over an untrusted network. A database published by a package on the
       # cluster leaves them unset. The name differs by engine because the
@@ -43,6 +56,35 @@ spec:
       # verify-full/disable, mysql takes false/preferred/true/skip-verify.
       sslMode: { type: string }
       tls: { type: string }
+---
+apiVersion: kubocd.kubotal.io/v1alpha1
+kind: ClusterContract
+metadata:
+  name: database-server-admin
+spec:
+  description: >-
+    Administration of a SQL database server, consumed by the platform to
+    provision the databases of its consumers. No package consumes it.
+  schema:
+    properties:
+      engine: { type: string, required: true }
+      host: { type: string, required: true }
+      port: { type: integer, required: true }
+      version:
+        type: string
+        required: true
+        description: Version of the server, as numbered by the engine (18, 11.4)
+      adminSecretRef:
+        type: string
+        required: true
+        description: "Secret with keys: username, password, of a role that can create databases and roles"
+      postgresql:
+        type: object
+        properties:
+          extensions:
+            type: array
+            items: { type: string }
+            description: Extensions the server can create
 ---
 apiVersion: kubocd.kubotal.io/v1alpha1
 kind: ClusterContract
