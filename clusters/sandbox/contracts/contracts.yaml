@@ -36,7 +36,8 @@ spec:
         type: string
         required: true
         description: >-
-          Secret with keys: username, password, and uri for postgresql
+          Secret with keys: username, password, and uri for postgresql when the
+          platform provisioned the database
           (postgresql://<username>:<password>@<host>:<port>/<dbName>, user and
           password percent-encoded, sslmode=<sslMode> when sslMode is set)
       version:
