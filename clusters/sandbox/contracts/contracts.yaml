@@ -75,6 +75,10 @@ spec:
         type: string
         required: true
         description: Version of the server, as numbered by the engine (18, 11.4)
+      namespace:
+        type: string
+        required: true
+        description: Namespace of the server workloads, holding the Secret of adminSecretRef
       adminSecretRef:
         type: string
         required: true
